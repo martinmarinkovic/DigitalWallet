@@ -175,6 +175,17 @@ private fun ScanBarcodeScreen(
     uiState: ScanBarcodeUiState,
     onEvent: (ScanBarcodeEvent) -> Unit
 ) {
+    val context = LocalContext.current
+    val effectiveStatus =
+        if (
+            !context.hasCameraPermission() &&
+                uiState.status == ScanBarcodeStatus.INITIALIZING
+        ) {
+            ScanBarcodeStatus.PERMISSION_REQUIRED
+        } else {
+            uiState.status
+        }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -202,7 +213,7 @@ private fun ScanBarcodeScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (uiState.status.showScannerPreview) {
+                if (effectiveStatus.showScannerPreview) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -231,29 +242,29 @@ private fun ScanBarcodeScreen(
                             }
                         )
 
-                        if (uiState.status.showProgress) {
+                        if (effectiveStatus.showProgress) {
                             CircularProgressIndicator(color = Color.White)
                         }
                     }
-                } else if (uiState.status.showProgress) {
+                } else if (effectiveStatus.showProgress) {
                     CircularProgressIndicator()
                 }
 
                 Text(
-                    text = stringResource(id = uiState.status.titleRes),
+                    text = stringResource(id = effectiveStatus.titleRes),
                     modifier = Modifier.padding(top = 20.dp),
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = stringResource(id = uiState.status.messageRes),
+                    text = stringResource(id = effectiveStatus.messageRes),
                     modifier = Modifier.padding(top = 10.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
 
                 when {
-                    uiState.status.showPermissionButton -> {
+                    effectiveStatus.showPermissionButton -> {
                         Button(
                             onClick = { onEvent(ScanBarcodeEvent.OnPermissionButtonClicked) },
                             modifier = Modifier.padding(top = 20.dp)
@@ -262,7 +273,7 @@ private fun ScanBarcodeScreen(
                         }
                     }
 
-                    uiState.status.showOpenSettingsButton -> {
+                    effectiveStatus.showOpenSettingsButton -> {
                         OutlinedButton(
                             onClick = { onEvent(ScanBarcodeEvent.OnOpenSettingsClicked) },
                             modifier = Modifier.padding(top = 20.dp)
@@ -271,7 +282,7 @@ private fun ScanBarcodeScreen(
                         }
                     }
 
-                    uiState.status.showRetryButton -> {
+                    effectiveStatus.showRetryButton -> {
                         Button(
                             onClick = { onEvent(ScanBarcodeEvent.OnRetryClicked) },
                             modifier = Modifier.padding(top = 20.dp)
@@ -339,12 +350,12 @@ private fun ScanBarcodeCameraPreview(
     DisposableEffect(lifecycleOwner, previewView, context, barcodeScanner, analysisExecutor) {
         val detectedCode = AtomicBoolean(false)
         val isProcessingFrame = AtomicBoolean(false)
-        var isDisposed = false
+        val isDisposed = AtomicBoolean(false)
         var boundCameraProvider: ProcessCameraProvider? = null
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
         val listener = Runnable {
-            if (isDisposed) {
+            if (isDisposed.get()) {
                 return@Runnable
             }
 
@@ -396,6 +407,7 @@ private fun ScanBarcodeCameraPreview(
                                         }
 
                                     if (
+                                        !isDisposed.get() &&
                                         barcode != null &&
                                             codeValue != null &&
                                             detectedCode.compareAndSet(false, true)
@@ -423,9 +435,11 @@ private fun ScanBarcodeCameraPreview(
                     preview,
                     analysis
                 )
-                currentOnInitialized()
+                if (!isDisposed.get()) {
+                    currentOnInitialized()
+                }
             }.onFailure {
-                if (!isDisposed) {
+                if (!isDisposed.get()) {
                     currentOnInitializationFailed()
                 }
             }
@@ -434,7 +448,7 @@ private fun ScanBarcodeCameraPreview(
         cameraProviderFuture.addListener(listener, mainExecutor)
 
         onDispose {
-            isDisposed = true
+            isDisposed.set(true)
             boundCameraProvider?.unbindAll()
         }
     }

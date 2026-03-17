@@ -72,7 +72,10 @@ class ScanBarcodeViewModel @Inject constructor(
 
             is ScanBarcodeEvent.OnPermissionStateResolved -> {
                 if (event.granted) {
-                    if (uiState.value.status != ScanBarcodeStatus.ACTIVE) {
+                    if (
+                        uiState.value.status != ScanBarcodeStatus.ACTIVE &&
+                            initializationTimeoutJob == null
+                    ) {
                         beginScannerInitialization()
                     }
                 } else {
@@ -93,16 +96,24 @@ class ScanBarcodeViewModel @Inject constructor(
 
             ScanBarcodeEvent.OnScannerInitializationFailed,
             ScanBarcodeEvent.OnScanProcessingFailed -> {
-                cancelInitializationTimeout()
                 mutableUiState.update { current ->
-                    current.copy(status = ScanBarcodeStatus.FAILED)
+                    if (current.status == ScanBarcodeStatus.INITIALIZING) {
+                        cancelInitializationTimeout()
+                        current.copy(status = ScanBarcodeStatus.FAILED)
+                    } else {
+                        current
+                    }
                 }
             }
 
             ScanBarcodeEvent.OnScannerInitialized -> {
-                cancelInitializationTimeout()
                 mutableUiState.update { current ->
-                    current.copy(status = ScanBarcodeStatus.ACTIVE)
+                    if (current.status == ScanBarcodeStatus.INITIALIZING) {
+                        cancelInitializationTimeout()
+                        current.copy(status = ScanBarcodeStatus.ACTIVE)
+                    } else {
+                        current
+                    }
                 }
             }
 

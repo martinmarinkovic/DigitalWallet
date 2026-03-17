@@ -83,12 +83,33 @@ class ScanBarcodeViewModelTest {
     }
 
     @Test
+    fun scannerInitialized_whenNotInitializing_isIgnored() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = false))
+        viewModel.onEvent(ScanBarcodeEvent.OnScannerInitialized)
+
+        assertEquals(ScanBarcodeStatus.PERMISSION_REQUIRED, viewModel.uiState.value.status)
+    }
+
+    @Test
     fun scannerInitializationFailed_updatesStateForRetry() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
 
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
         viewModel.onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
 
         assertEquals(ScanBarcodeStatus.FAILED, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun scannerInitializationFailed_whenPermissionRequired_isIgnored() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = false))
+        viewModel.onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
+
+        assertEquals(ScanBarcodeStatus.PERMISSION_REQUIRED, viewModel.uiState.value.status)
     }
 
     @Test
@@ -106,8 +127,19 @@ class ScanBarcodeViewModelTest {
     fun retryClicked_restartsScannerInitialization() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
 
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
         viewModel.onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
         viewModel.onEvent(ScanBarcodeEvent.OnRetryClicked)
+
+        assertEquals(ScanBarcodeStatus.INITIALIZING, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun permissionResolvedGranted_whileAlreadyInitializing_doesNotRestartState() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
 
         assertEquals(ScanBarcodeStatus.INITIALIZING, viewModel.uiState.value.status)
     }

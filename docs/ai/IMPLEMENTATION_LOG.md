@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Scan barcode / QR race-condition hardening applied and validated on March 17, 2026.
 - Bottom-bar spacing fix applied and validated on March 17, 2026.
 - Scan barcode / QR startup fix applied and validated on March 17, 2026.
 - Create-category dialog runtime crash fix applied and validated on March 17, 2026.
@@ -221,6 +222,7 @@ Maintenance rule: update this file after every major task.
 - Crash/stability hardening now also converts scan-photo, smart-scan, and Google Wallet import launcher/setup failures into their existing failed UI states instead of allowing camera, picker, or scanner startup exceptions to crash the route.
 - Performance hardening now moves ML Kit image loading/post-processing, fullscreen barcode bitmap generation, and backup/restore/export JSON-CSV serialization off the main thread, eliminating the most obvious ANR-class work from active user flows.
 - Scan barcode / QR startup is now hardened against infinite loading: the old one-shot scanner launch effect has been replaced with explicit permission, initializing, active, blocked, and failed states; missing permission now shows permission UI instead of a loader; initialization failures surface retry UI instead of hanging indefinitely.
+- Scan barcode / QR lifecycle/state handling is now also hardened against permission and disposal races: the scanner preview no longer starts before camera permission is confirmed, `OnScannerInitialized` and initialization-failure events are ignored unless the ViewModel is still in `INITIALIZING`, and disposed preview instances no longer revive the scanner by delivering stale success callbacks.
 - Focused scan-barcode verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeFlowIntegrationTest' :app:assembleDebug :app:assembleRelease`
 - UX hardening now resets photo-scan, smart-scan image, and Google Wallet image-import routes back to actionable idle state after a successful handoff into confirmation, so backing out of confirmation no longer returns the user to a stale processing spinner.
