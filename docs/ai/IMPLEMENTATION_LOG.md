@@ -4,6 +4,15 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Bottom-bar safe-area inset fix applied and validated on March 17, 2026.
+- Bottom-bar fixed-height override applied and validated on March 17, 2026.
+- Bottom-bar standard-height restoration applied and validated on March 17, 2026.
+- Create-category palette expansion update applied and validated on March 17, 2026.
+- Bottom-bar height/alignment refinement applied and validated on March 17, 2026.
+- Bottom-bar flush rectangular layout fix applied and validated on March 17, 2026.
+- Bottom-bar flat toolbar-matched refinement update applied and validated on March 17, 2026.
+- Bottom-bar premium refinement update applied and validated on March 17, 2026.
+- Home UI polish update applied and validated on March 17, 2026.
 - Scan barcode / QR race-condition hardening applied and validated on March 17, 2026.
 - Bottom-bar spacing fix applied and validated on March 17, 2026.
 - Scan barcode / QR startup fix applied and validated on March 17, 2026.
@@ -241,6 +250,20 @@ Maintenance rule: update this file after every major task.
 - Bottom-bar spacing is now corrected in the app shell: the root `Scaffold` now consumes its `innerPadding` after applying it to the `NavHost`, preventing nested top-level `Scaffold`s from reapplying the same bottom insets and creating a visible gap above the bottom navigation bar.
 - Focused shell-layout verification passes:
   - `./gradlew :app:assembleDebug`
+- Home UI now uses the `Cards` toolbar title, flat fully colored category tiles with centered labels and no dark ripple overlay, a custom icon-only bottom bar with a standout circular center Add action, and fixed light/dark chrome colors with pure white/black page backgrounds plus light-gray/dark-gray bars.
+- The custom bottom bar has now been refined with a smoother concave center notch, a slimmer chrome shell, balanced side-icon spacing, and a background-ringed Add button so the primary action reads as intentionally seated into the bar rather than floating like a default FAB.
+- The bottom bar has now been tightened further with a shorter shell, deeper notch geometry, more restrained side-icon treatments, and a larger lifted Add action with a cleaner ring/border treatment for a more premium custom feel.
+- The bottom bar is now flattened to match the top toolbar chrome more closely: the container uses the same surface color, all icons sit fully inside the bar, Home and Settings communicate selection by icon color only, and the Add action stays as a stable orange circle without floating, shadows, or state-driven icon changes.
+- The bottom bar now uses a full-width rectangular container with no rounded corners, no outer padding, and no shadow. The earlier visible gap above the bar was caused by combining outer bar padding with `navigationBarsPadding()` on the bar container itself; inset handling is now moved inside the bar row so the surface stays flush to the bottom edge while content still clears gesture and 3-button navigation areas correctly.
+- The bottom bar is now taller and visually less compressed: the main row height increased, Home and Settings now sit in fixed-height centered lanes, and the Add action was nudged up in size just enough to stay dominant without feeling larger than the bar itself.
+- Category creation now exposes exactly 15 visually distinct color choices across the spectrum, renders them in a balanced 3x5 swatch grid, and uses a clearer selected state with a check-marked inner ring. Focused tests now verify the exact palette, uniqueness count, and that a chosen custom color persists through the repository layer and appears in the Home category-tile UI state.
+- The bottom bar now uses a more standard bottom-navigation height again: the main bar row is back to an `80dp` class height, the side-action lanes are slightly taller, and the Add action scales with it so the composition feels like a normal production bottom nav instead of a compressed custom strip.
+- The bottom bar height is now hard-forced instead of being partially driven by inset padding: the container itself is explicitly `80dp` tall, the row fills that fixed shell, and the side-item click lanes now match the bar height so vertical centering is stable and no longer content-sized.
+- Bottom-bar system-inset handling is now separated from the fixed interactive shell: the clickable bar content stays in a hard `80dp` row, while a same-color bottom inset extension is rendered underneath using the navigation-bar window inset. This keeps the controls above the system nav area without reintroducing the old visible gap above the bar.
+- Focused Home UI verification passes:
+  - `./gradlew :app:assembleDebug`
+ - Focused category-creation palette verification passes:
+   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryFlowIntegrationTest' :app:assembleDebug`
 
 ## 3. In Progress
 - No feature implementation is currently in progress.

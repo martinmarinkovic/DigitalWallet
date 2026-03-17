@@ -76,6 +76,37 @@ class CreateCategoryFlowIntegrationTest : BaseRepositoryTest() {
         assertFalse(homeCategories.any { it.name == "+ New Category" })
     }
 
+    @Test
+    fun save_withSelectedColor_persistsColorAndExposesItToHomeTiles() = runTest {
+        val homeViewModel = HomeViewModel(
+            categoryRepository = repository,
+            cardRepository = cardRepository,
+            searchHistoryRepository = searchHistoryRepository
+        )
+        val createCategoryViewModel = CreateCategoryViewModel(repository)
+
+        advanceUntilIdle()
+
+        createCategoryViewModel.onEvent(CreateCategoryEvent.OnNameChanged("Travel Club"))
+        createCategoryViewModel.onEvent(CreateCategoryEvent.OnColorSelected("#0891B2"))
+        val dismissEffect = this.backgroundScope.async(start = CoroutineStart.UNDISPATCHED) {
+            createCategoryViewModel.effects.first()
+        }
+
+        createCategoryViewModel.onEvent(CreateCategoryEvent.OnSaveClicked)
+        advanceUntilIdle()
+
+        assertEquals(CreateCategoryEffect.Dismiss, dismissEffect.await())
+
+        val persistedCategory = repository.observeCategories().first().last()
+        val homeCategory = homeViewModel.uiState.first { state ->
+            state.categories.lastOrNull()?.name == "Travel Club"
+        }.categories.last()
+
+        assertEquals("#0891B2", persistedCategory.color)
+        assertEquals("#0891B2", homeCategory.colorHex)
+    }
+
     private companion object {
         val expectedDefaultCategoryNames = listOf(
             "Favorites",

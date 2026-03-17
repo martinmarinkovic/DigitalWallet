@@ -6,6 +6,7 @@
     <string name="home_search_content_description">Open search</string>
     <string name="home_close_search_content_description">Close search</string>
     <string name="home_add_category_content_description">Create category</string>
+    <string name="home_screen_title_cards">Cards</string>
     <string name="home_new_category_tile_title">+ New Category</string>
     <string name="home_search_hint">Search categories or cards</string>
     <string name="home_previous_searches_title">Previous searches</string>

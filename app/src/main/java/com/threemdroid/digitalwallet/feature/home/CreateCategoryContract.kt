@@ -29,14 +29,20 @@ sealed interface CreateCategoryEffect {
 
 internal object CreateCategoryDefaults {
     val colorHexes: List<String> = listOf(
-        "#F59E0B",
-        "#2563EB",
-        "#7C3AED",
-        "#0F766E",
+        "#F97316",
         "#DC2626",
-        "#EA580C",
-        "#4B5563",
-        "#1D4ED8",
+        "#EC4899",
+        "#A855F7",
+        "#4F46E5",
+        "#2563EB",
+        "#0891B2",
+        "#0F766E",
+        "#16A34A",
+        "#84CC16",
+        "#EAB308",
+        "#F59E0B",
+        "#92400E",
+        "#6B7280",
         "#475569"
     )
 

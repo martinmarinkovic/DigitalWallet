@@ -8,16 +8,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -28,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -102,7 +105,8 @@ private fun CreateCategoryDialog(
                 ) {
                     uiState.availableColorHexes.chunked(5).forEach { rowColors ->
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             rowColors.forEach { colorHex ->
                                 CreateCategoryColorSwatch(
@@ -178,10 +182,16 @@ private fun CreateCategoryColorSwatch(
         } else {
             MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         }
+    val selectionIconTint =
+        if (accentColor.luminance() > 0.42f) {
+            Color(0xFF101010)
+        } else {
+            Color.White
+        }
 
     Box(
         modifier = Modifier
-            .size(40.dp)
+            .size(44.dp)
             .clip(CircleShape)
             .background(accentColor)
             .border(
@@ -195,16 +205,25 @@ private fun CreateCategoryColorSwatch(
             )
             .semantics {
                 this.contentDescription = contentDescription
-            }
+            },
+        contentAlignment = androidx.compose.ui.Alignment.Center
     ) {
         if (isSelected) {
-            Spacer(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(12.dp)
+                    .padding(7.dp)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.18f))
-            )
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.16f)),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = selectionIconTint,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }

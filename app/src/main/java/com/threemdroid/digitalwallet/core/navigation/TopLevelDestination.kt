@@ -7,9 +7,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.annotation.StringRes
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.threemdroid.digitalwallet.R
 
 enum class TopLevelDestination(
@@ -41,11 +40,6 @@ enum class TopLevelDestination(
         unselectedIcon = Icons.Outlined.Settings
     );
 
-    @Composable
-    fun Icon(selected: Boolean) {
-        androidx.compose.material3.Icon(
-            imageVector = if (selected) selectedIcon else unselectedIcon,
-            contentDescription = null
-        )
-    }
+    fun iconVector(selected: Boolean): ImageVector =
+        if (selected) selectedIcon else unselectedIcon
 }

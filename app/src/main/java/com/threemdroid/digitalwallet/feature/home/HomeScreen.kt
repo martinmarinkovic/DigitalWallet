@@ -10,6 +10,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +69,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -76,6 +79,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -124,6 +128,7 @@ private fun HomeScreen(
     onEvent: (HomeEvent) -> Unit
 ) {
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         },
@@ -148,7 +153,9 @@ private fun HomeScreen(
                         )
                     } else {
                         CenterAlignedTopAppBar(
-                            title = { Text(text = stringResource(id = R.string.nav_home)) },
+                            title = {
+                                Text(text = stringResource(id = R.string.home_screen_title_cards))
+                            },
                             navigationIcon = {
                                 IconButton(onClick = { onEvent(HomeEvent.OnSearchClicked) }) {
                                     Icon(
@@ -164,7 +171,13 @@ private fun HomeScreen(
                                         contentDescription = stringResource(id = R.string.home_add_category_content_description)
                                     )
                                 }
-                            }
+                            },
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                                actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         )
                     }
                 }
@@ -255,8 +268,8 @@ private fun HomeSearchTopBar(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
-        shadowElevation = 3.dp
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -391,8 +404,8 @@ private fun CategoryGridContent(
         state = gridState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         items(
             items = categories,
@@ -674,68 +687,35 @@ private fun CategoryTile(
     onClick: () -> Unit
 ) {
     val accentColor = categoryAccentColor(category.colorHex)
-    ElevatedCard(
+    val tileShape = RoundedCornerShape(28.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(148.dp)
+            .height(156.dp)
+            .clip(tileShape)
+            .background(
+                color = accentColor.copy(alpha = if (isBeingDragged) 0.9f else 1f),
+                shape = tileShape
+            )
             .clickable(
                 enabled = enabled,
+                interactionSource = interactionSource,
+                indication = null,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = if (isBeingDragged) 12.dp else 1.dp
-        )
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(accentColor)
-                )
-                Text(
-                    text = pluralStringResource(
-                        id = R.plurals.home_category_card_count,
-                        count = category.cardCount,
-                        category.cardCount
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Column {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(accentColor.copy(alpha = 0.25f))
-                )
-            }
-        }
+        Text(
+            text = category.name,
+            modifier = Modifier.padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = categoryTileTextColor(accentColor),
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -744,15 +724,24 @@ private fun NewCategoryTile(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    OutlinedCard(
+    val tileShape = RoundedCornerShape(28.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(148.dp)
+            .height(156.dp)
+            .clip(tileShape)
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = tileShape
+            )
             .clickable(
                 enabled = enabled,
+                interactionSource = interactionSource,
+                indication = null,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(24.dp)
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
@@ -763,7 +752,7 @@ private fun NewCategoryTile(
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(50.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
@@ -774,12 +763,13 @@ private fun NewCategoryTile(
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
-            Text(
+            /*Text(
                 text = stringResource(id = R.string.home_new_category_tile_title),
                 modifier = Modifier.padding(top = 12.dp),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )*/
         }
     }
 }
@@ -790,6 +780,13 @@ private fun categoryAccentColor(colorHex: String): Color =
         Color(parseColor(colorHex))
     }.getOrElse {
         MaterialTheme.colorScheme.primary
+    }
+
+private fun categoryTileTextColor(backgroundColor: Color): Color =
+    if (backgroundColor.luminance() > 0.42f) {
+        Color(0xFF101010)
+    } else {
+        Color.White
     }
 
 private data class CategoryReorderTarget(
