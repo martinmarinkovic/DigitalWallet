@@ -65,7 +65,7 @@
     <string name="fullscreen_code_missing_title">Code unavailable</string>
     <string name="fullscreen_code_missing_message">This code could not be loaded.</string>
     <string name="navigate_back">Navigate back</string>
-    <string name="add_card_method_scan_barcode_qr">Scan barcode / QR code</string>
+    <string name="add_card_method_scan_barcode_qr">Scan live code</string>
     <string name="add_card_method_scan_card_photo">Scan card photo</string>
     <string name="add_card_method_manual_entry">Manual entry</string>
     <string name="add_card_method_smart_scanning">Smart scanning</string>
@@ -97,7 +97,7 @@
     <string name="manual_entry_save_error_message">Unable to save card. Try again.</string>
     <string name="scan_barcode_launching_title">Opening scanner</string>
     <string name="scan_barcode_launching_message">Preparing the camera scanner.</string>
-    <string name="scan_barcode_active_title">Scan barcode / QR code</string>
+    <string name="scan_barcode_active_title">Scan live code</string>
     <string name="scan_barcode_active_message">Hold the code inside the frame.</string>
     <string name="scan_barcode_permission_required_title">Camera permission required</string>
     <string name="scan_barcode_permission_required_message">Allow camera access to scan barcodes and QR codes.</string>
@@ -108,6 +108,7 @@
     <string name="scan_barcode_retry">Scan again</string>
     <string name="scan_barcode_allow_camera">Allow camera</string>
     <string name="scan_barcode_open_settings">Open settings</string>
+    <string name="scan_barcode_try_other_way">Try other way</string>
     <string name="smart_scan_intro_title">Use assisted smart scanning</string>
     <string name="smart_scan_intro_message">Scan a live code or use a card image. The app will infer barcode data, card number, and simple name hints when available for your review.</string>
     <string name="smart_scan_scan_live_code">Scan live code</string>
@@ -131,7 +132,7 @@
     <string name="google_wallet_import_choose_image_action">Choose Wallet image</string>
     <string name="scan_card_photo_intro_title">Add details from a card photo</string>
     <string name="scan_card_photo_intro_message">Capture a card image or choose one from your library. The app will try to detect barcode data, card number, and simple name hints for review.</string>
-    <string name="scan_card_photo_take_photo">Take photo</string>
+    <string name="scan_card_photo_take_photo">Take a photo</string>
     <string name="scan_card_photo_choose_image">Choose image</string>
     <string name="scan_card_photo_processing_title">Reading card photo</string>
     <string name="scan_card_photo_processing_message">Extracting whatever details can be read from the image.</string>

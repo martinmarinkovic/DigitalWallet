@@ -37,6 +37,17 @@ class ScanBarcodeViewModelTest {
     }
 
     @Test
+    fun initialPermissionMissing_requestsCameraPermissionOnce() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+        val deferredEffect = async { viewModel.effects.first() }
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = false))
+        advanceUntilIdle()
+
+        assertEquals(ScanBarcodeEffect.RequestCameraPermission, deferredEffect.await())
+    }
+
+    @Test
     fun permissionButtonClicked_requestsCameraPermission() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
         val deferredEffect = async { viewModel.effects.first() }
@@ -45,6 +56,64 @@ class ScanBarcodeViewModelTest {
         advanceUntilIdle()
 
         assertEquals(ScanBarcodeEffect.RequestCameraPermission, deferredEffect.await())
+    }
+
+    @Test
+    fun takePhotoClicked_opensPhotoScanRouteWithTakePhotoAction() = runTest {
+        val viewModel = ScanBarcodeViewModel(
+            SavedStateHandle(mapOf(AddCardRoutes.categoryIdArg to "default_access"))
+        )
+        val deferredEffect = async { viewModel.effects.first() }
+
+        viewModel.onEvent(ScanBarcodeEvent.OnTakePhotoClicked)
+        advanceUntilIdle()
+
+        assertEquals(
+            ScanBarcodeEffect.OpenRoute(
+                PhotoScanRoutes.photoScan(
+                    categoryId = "default_access",
+                    launchAction = PhotoScanLaunchAction.TAKE_PHOTO
+                )
+            ),
+            deferredEffect.await()
+        )
+    }
+
+    @Test
+    fun chooseImageClicked_opensPhotoScanRouteWithChooseImageAction() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+        val deferredEffect = async { viewModel.effects.first() }
+
+        viewModel.onEvent(ScanBarcodeEvent.OnChooseImageClicked)
+        advanceUntilIdle()
+
+        assertEquals(
+            ScanBarcodeEffect.OpenRoute(
+                PhotoScanRoutes.photoScan(
+                    categoryId = null,
+                    launchAction = PhotoScanLaunchAction.CHOOSE_IMAGE
+                )
+            ),
+            deferredEffect.await()
+        )
+    }
+
+    @Test
+    fun tryOtherWayClicked_opensAlternativeMethodsRoute() = runTest {
+        val viewModel = ScanBarcodeViewModel(
+            SavedStateHandle(mapOf(AddCardRoutes.categoryIdArg to "default_access"))
+        )
+        val deferredEffect = async { viewModel.effects.first() }
+
+        viewModel.onEvent(ScanBarcodeEvent.OnTryOtherWayClicked)
+        advanceUntilIdle()
+
+        assertEquals(
+            ScanBarcodeEffect.OpenRoute(
+                AddCardRoutes.alternativeMethods("default_access")
+            ),
+            deferredEffect.await()
+        )
     }
 
     @Test

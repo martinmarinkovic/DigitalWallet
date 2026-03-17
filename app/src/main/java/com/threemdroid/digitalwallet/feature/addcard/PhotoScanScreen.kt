@@ -59,10 +59,18 @@ fun NavGraphBuilder.photoScanScreen(
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
+            },
+            navArgument(PhotoScanRoutes.launchActionArg) {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
             }
         )
-    ) {
+    ) { backStackEntry ->
         PhotoScanRoute(
+            launchAction = PhotoScanLaunchAction.fromRouteValue(
+                backStackEntry.arguments?.getString(PhotoScanRoutes.launchActionArg)
+            ),
             onNavigateBack = onNavigateBack,
             onNavigateToConfirmation = onNavigateToConfirmation
         )
@@ -71,6 +79,7 @@ fun NavGraphBuilder.photoScanScreen(
 
 @Composable
 private fun PhotoScanRoute(
+    launchAction: PhotoScanLaunchAction?,
     onNavigateBack: () -> Unit,
     onNavigateToConfirmation: (String) -> Unit,
     viewModel: PhotoScanViewModel = hiltViewModel()
@@ -123,6 +132,20 @@ private fun PhotoScanRoute(
 
                 is PhotoScanEffect.OpenConfirmation -> onNavigateToConfirmation(effect.route)
             }
+        }
+    }
+
+    LaunchedEffect(launchAction) {
+        when (launchAction) {
+            PhotoScanLaunchAction.TAKE_PHOTO -> {
+                viewModel.onEvent(PhotoScanEvent.OnTakePhotoClicked)
+            }
+
+            PhotoScanLaunchAction.CHOOSE_IMAGE -> {
+                viewModel.onEvent(PhotoScanEvent.OnChooseImageClicked)
+            }
+
+            null -> Unit
         }
     }
 

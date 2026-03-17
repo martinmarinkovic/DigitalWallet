@@ -31,6 +31,7 @@ class ScanBarcodeViewModel @Inject constructor(
     val effects = mutableEffects.asSharedFlow()
 
     private var initializationTimeoutJob: Job? = null
+    private var hasAutoRequestedCameraPermission = false
 
     fun onEvent(event: ScanBarcodeEvent) {
         when (event) {
@@ -44,6 +45,42 @@ class ScanBarcodeViewModel @Inject constructor(
             ScanBarcodeEvent.OnOpenSettingsClicked -> {
                 viewModelScope.launch {
                     mutableEffects.emit(ScanBarcodeEffect.OpenAppSettings)
+                }
+            }
+
+            ScanBarcodeEvent.OnTakePhotoClicked -> {
+                viewModelScope.launch {
+                    mutableEffects.emit(
+                        ScanBarcodeEffect.OpenRoute(
+                            PhotoScanRoutes.photoScan(
+                                categoryId = preselectedCategoryId,
+                                launchAction = PhotoScanLaunchAction.TAKE_PHOTO
+                            )
+                        )
+                    )
+                }
+            }
+
+            ScanBarcodeEvent.OnChooseImageClicked -> {
+                viewModelScope.launch {
+                    mutableEffects.emit(
+                        ScanBarcodeEffect.OpenRoute(
+                            PhotoScanRoutes.photoScan(
+                                categoryId = preselectedCategoryId,
+                                launchAction = PhotoScanLaunchAction.CHOOSE_IMAGE
+                            )
+                        )
+                    )
+                }
+            }
+
+            ScanBarcodeEvent.OnTryOtherWayClicked -> {
+                viewModelScope.launch {
+                    mutableEffects.emit(
+                        ScanBarcodeEffect.OpenRoute(
+                            AddCardRoutes.alternativeMethods(preselectedCategoryId)
+                        )
+                    )
                 }
             }
 
@@ -88,6 +125,15 @@ class ScanBarcodeViewModel @Inject constructor(
                                 ScanBarcodeStatus.PERMISSION_REQUIRED
                             }
                         )
+                    }
+                    if (
+                        !hasAutoRequestedCameraPermission &&
+                            uiState.value.status == ScanBarcodeStatus.PERMISSION_REQUIRED
+                    ) {
+                        hasAutoRequestedCameraPermission = true
+                        viewModelScope.launch {
+                            mutableEffects.emit(ScanBarcodeEffect.RequestCameraPermission)
+                        }
                     }
                 }
             }

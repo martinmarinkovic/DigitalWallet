@@ -55,7 +55,17 @@ import kotlinx.coroutines.launch
 
 object AddCardRoutes {
     const val categoryIdArg = "categoryId"
+    const val alternativeMethodsBaseRoute = "add_card/alternative_methods"
+    const val alternativeMethodsRoutePattern =
+        "$alternativeMethodsBaseRoute?${categoryIdArg}={${categoryIdArg}}"
     const val chooserFromCategory = "add_card/category/{$categoryIdArg}"
+
+    fun alternativeMethods(categoryId: String?): String =
+        if (categoryId.isNullOrBlank()) {
+            alternativeMethodsBaseRoute
+        } else {
+            "$alternativeMethodsBaseRoute?${categoryIdArg}=${encodeRouteValue(categoryId)}"
+        }
 
     fun chooserFromCategory(categoryId: String): String =
         "add_card/category/${encodeRouteValue(categoryId)}"
@@ -73,9 +83,6 @@ enum class AddCardMethod(
     MANUAL_ENTRY(
         titleRes = R.string.add_card_method_manual_entry
     ),
-    SMART_SCANNING(
-        titleRes = R.string.add_card_method_smart_scanning
-    ),
     IMPORT_GOOGLE_WALLET(
         titleRes = R.string.add_card_method_import_google_wallet
     );
@@ -85,7 +92,6 @@ enum class AddCardMethod(
             SCAN_BARCODE_QR -> ScanBarcodeRoutes.scan(preselectedCategoryId)
             SCAN_CARD_PHOTO -> PhotoScanRoutes.photoScan(preselectedCategoryId)
             MANUAL_ENTRY -> ManualEntryRoutes.manualEntry(preselectedCategoryId)
-            SMART_SCANNING -> SmartScanRoutes.smartScan(preselectedCategoryId)
             IMPORT_GOOGLE_WALLET -> GoogleWalletImportRoutes.googleWalletImport(preselectedCategoryId)
         }
 }
@@ -156,8 +162,26 @@ fun NavGraphBuilder.addCardGraph(
     onCardSaved: (String) -> Unit
 ) {
     composable(route = TopLevelDestination.ADD_CARD.startRoute) {
-        AddCardRoute(
+        ScanBarcodeRoute(
             showBackButton = false,
+            onNavigateBack = onNavigateBack,
+            onNavigateToConfirmation = onNavigateToRoute,
+            onNavigateToRoute = onNavigateToRoute
+        )
+    }
+
+    composable(
+        route = AddCardRoutes.alternativeMethodsRoutePattern,
+        arguments = listOf(
+            navArgument(AddCardRoutes.categoryIdArg) {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )
+    ) {
+        AddCardRoute(
+            showBackButton = true,
             onNavigateBack = onNavigateBack,
             onNavigateToRoute = onNavigateToRoute
         )

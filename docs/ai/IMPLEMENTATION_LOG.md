@@ -4,6 +4,9 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Add Card live-scan background/button styling update applied and validated on March 17, 2026.
+- Add Card live-scan UI refinement update applied and validated on March 17, 2026.
+- Add Card default-entry flow update applied and validated on March 17, 2026.
 - Add Card arrow tint / Settings arrow removal correction applied and validated on March 17, 2026.
 - Add Card and Settings Home-aligned styling update applied and validated on March 17, 2026.
 - Confirm-scan IME layout fix applied and validated on March 17, 2026.
@@ -48,6 +51,12 @@ Maintenance rule: update this file after every major task.
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeViewModelTest' :app:assembleDebug`
 - Focused confirm-scan layout verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' :app:assembleDebug`
+- Focused Add Card entry-flow verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.AddCardViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.PhotoScanFlowIntegrationTest' :app:assembleDebug`
+- Focused Add Card live-scan UI verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.AddCardViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeFlowIntegrationTest' :app:assembleDebug`
+- Focused Add Card live-scan styling verification now passes:
+  - `./gradlew :app:assembleDebug`
 - Focused Add Card / Settings styling verification passes:
   - `./gradlew :app:assembleDebug`
 - Focused backup/restore/export verification passes:
@@ -242,6 +251,12 @@ Maintenance rule: update this file after every major task.
 - Performance hardening now moves ML Kit image loading/post-processing, fullscreen barcode bitmap generation, and backup/restore/export JSON-CSV serialization off the main thread, eliminating the most obvious ANR-class work from active user flows.
 - Scan barcode / QR startup is now hardened against infinite loading: the old one-shot scanner launch effect has been replaced with explicit permission, initializing, active, blocked, and failed states; missing permission now shows permission UI instead of a loader; initialization failures surface retry UI instead of hanging indefinitely.
 - Scan barcode / QR lifecycle/state handling is now also hardened against permission and disposal races: the scanner preview no longer starts before camera permission is confirmed, `OnScannerInitialized` and initialization-failure events are ignored unless the ViewModel is still in `INITIALIZING`, and disposed preview instances no longer revive the scanner by delivering stale success callbacks.
+- Add Card from the bottom bar now opens the live camera scan screen directly instead of the old chooser, making live scan the default entry path while preserving the existing downstream confirmation/save flow.
+- The old Add Card chooser is now a fallback alternative-methods screen opened from `Try other way`, and it now exposes only `Scan live code`, `Scan card photo`, `Manual entry`, and `Import from Google Wallet`.
+- The live scan screen now includes a stable bottom action section with `Take a photo`, `Choose image`, and `Try other way`, and the photo/image actions reuse the existing photo-scan route through explicit launch-mode routing rather than duplicating extraction/save logic.
+- Live scan now auto-requests camera permission once on first entry when needed, but denied or blocked permission still leaves the Add Card flow usable through `Take a photo`, `Choose image`, and `Try other way`, with no infinite-loading fallback.
+- The default Add Card live-scan UI is now visually scanner-first: the camera preview fills the route area, the previous boxed preview is removed, a centered rounded barcode guide overlay is shown above the preview, the active `Scan live code` content label is removed, and the bottom action area is reduced to a single `Try other way` action while keeping the same fallback-navigation behavior.
+- The Add Card live-scan screen now reuses the same pure black / pure white `background` surface as Home and styles the remaining `Try other way` action as a primary orange CTA with white text, without changing scan behavior or fallback navigation.
 - Focused scan-barcode verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeFlowIntegrationTest' :app:assembleDebug :app:assembleRelease`
 - UX hardening now resets photo-scan, smart-scan image, and Google Wallet image-import routes back to actionable idle state after a successful handoff into confirmation, so backing out of confirmation no longer returns the user to a stale processing spinner.

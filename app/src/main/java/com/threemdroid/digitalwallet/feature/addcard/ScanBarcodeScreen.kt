@@ -15,18 +15,20 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,16 +87,20 @@ fun NavGraphBuilder.scanBarcodeScreen(
         )
     ) {
         ScanBarcodeRoute(
+            showBackButton = true,
             onNavigateBack = onNavigateBack,
-            onNavigateToConfirmation = onNavigateToConfirmation
+            onNavigateToConfirmation = onNavigateToConfirmation,
+            onNavigateToRoute = onNavigateToConfirmation
         )
     }
 }
 
 @Composable
-private fun ScanBarcodeRoute(
+internal fun ScanBarcodeRoute(
+    showBackButton: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateToConfirmation: (String) -> Unit,
+    onNavigateToRoute: (String) -> Unit,
     viewModel: ScanBarcodeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -103,6 +109,7 @@ private fun ScanBarcodeRoute(
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnNavigateBack by rememberUpdatedState(onNavigateBack)
     val currentOnNavigateToConfirmation by rememberUpdatedState(onNavigateToConfirmation)
+    val currentOnNavigateToRoute by rememberUpdatedState(onNavigateToRoute)
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -136,6 +143,7 @@ private fun ScanBarcodeRoute(
                 is ScanBarcodeEffect.OpenConfirmation -> {
                     currentOnNavigateToConfirmation(effect.route)
                 }
+                is ScanBarcodeEffect.OpenRoute -> currentOnNavigateToRoute(effect.route)
                 ScanBarcodeEffect.RequestCameraPermission -> {
                     cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                 }
@@ -164,6 +172,7 @@ private fun ScanBarcodeRoute(
     }
 
     ScanBarcodeScreen(
+        showBackButton = showBackButton,
         uiState = uiState,
         onEvent = viewModel::onEvent
     )
@@ -172,6 +181,7 @@ private fun ScanBarcodeRoute(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ScanBarcodeScreen(
+    showBackButton: Boolean,
     uiState: ScanBarcodeUiState,
     onEvent: (ScanBarcodeEvent) -> Unit
 ) {
@@ -188,112 +198,165 @@ private fun ScanBarcodeScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(text = stringResource(id = R.string.add_card_method_scan_barcode_qr)) },
-                navigationIcon = {
-                    IconButton(onClick = { onEvent(ScanBarcodeEvent.OnBackClicked) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.navigate_back)
-                        )
+            if (showBackButton) {
+                CenterAlignedTopAppBar(
+                    title = { Text(text = stringResource(id = R.string.add_card_method_scan_barcode_qr)) },
+                    navigationIcon = {
+                        IconButton(onClick = { onEvent(ScanBarcodeEvent.OnBackClicked) }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(id = R.string.navigate_back)
+                            )
+                        }
                     }
-                }
+                )
+            }
+        },
+        bottomBar = {
+            ScanBarcodeBottomActions(
+                onTryOtherWayClicked = { onEvent(ScanBarcodeEvent.OnTryOtherWayClicked) }
             )
         }
     ) { innerPadding ->
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (effectiveStatus.showScannerPreview) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(360.dp)
-                            .background(
-                                color = Color.Black,
-                                shape = RoundedCornerShape(24.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ScanBarcodeCameraPreview(
-                            modifier = Modifier.fillMaxSize(),
-                            onInitialized = {
-                                onEvent(ScanBarcodeEvent.OnScannerInitialized)
-                            },
-                            onInitializationFailed = {
-                                onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
-                            },
-                            onCodeDetected = { codeType, codeValue ->
-                                onEvent(
-                                    ScanBarcodeEvent.OnScanSucceeded(
-                                        codeType = codeType,
-                                        codeValue = codeValue
-                                    )
-                                )
-                            }
+            if (effectiveStatus.showScannerPreview) {
+                ScanBarcodeCameraPreview(
+                    modifier = Modifier.fillMaxSize(),
+                    onInitialized = {
+                        onEvent(ScanBarcodeEvent.OnScannerInitialized)
+                    },
+                    onInitializationFailed = {
+                        onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
+                    },
+                    onCodeDetected = { codeType, codeValue ->
+                        onEvent(
+                            ScanBarcodeEvent.OnScanSucceeded(
+                                codeType = codeType,
+                                codeValue = codeValue
+                            )
                         )
-
-                        if (effectiveStatus.showProgress) {
-                            CircularProgressIndicator(color = Color.White)
-                        }
                     }
-                } else if (effectiveStatus.showProgress) {
-                    CircularProgressIndicator()
-                }
-
-                Text(
-                    text = stringResource(id = effectiveStatus.titleRes),
-                    modifier = Modifier.padding(top = 20.dp),
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = stringResource(id = effectiveStatus.messageRes),
-                    modifier = Modifier.padding(top = 10.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
                 )
 
-                when {
-                    effectiveStatus.showPermissionButton -> {
-                        Button(
-                            onClick = { onEvent(ScanBarcodeEvent.OnPermissionButtonClicked) },
-                            modifier = Modifier.padding(top = 20.dp)
-                        ) {
-                            Text(text = stringResource(id = R.string.scan_barcode_allow_camera))
-                        }
+                ScanBarcodeGuideOverlay(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
+            if (effectiveStatus != ScanBarcodeStatus.ACTIVE) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (effectiveStatus.showProgress) {
+                        CircularProgressIndicator()
                     }
 
-                    effectiveStatus.showOpenSettingsButton -> {
-                        OutlinedButton(
-                            onClick = { onEvent(ScanBarcodeEvent.OnOpenSettingsClicked) },
-                            modifier = Modifier.padding(top = 20.dp)
+                    Surface(
+                        modifier = Modifier.padding(top = if (effectiveStatus.showProgress) 20.dp else 0.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = stringResource(id = R.string.scan_barcode_open_settings))
-                        }
-                    }
+                            Text(
+                                text = stringResource(id = effectiveStatus.titleRes),
+                                style = MaterialTheme.typography.headlineSmall,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = stringResource(id = effectiveStatus.messageRes),
+                                modifier = Modifier.padding(top = 10.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
 
-                    effectiveStatus.showRetryButton -> {
-                        Button(
-                            onClick = { onEvent(ScanBarcodeEvent.OnRetryClicked) },
-                            modifier = Modifier.padding(top = 20.dp)
-                        ) {
-                            Text(text = stringResource(id = R.string.scan_barcode_retry))
+                            when {
+                                effectiveStatus.showPermissionButton -> {
+                                    Button(
+                                        onClick = { onEvent(ScanBarcodeEvent.OnPermissionButtonClicked) },
+                                        modifier = Modifier.padding(top = 20.dp)
+                                    ) {
+                                        Text(text = stringResource(id = R.string.scan_barcode_allow_camera))
+                                    }
+                                }
+
+                                effectiveStatus.showOpenSettingsButton -> {
+                                    OutlinedButton(
+                                        onClick = { onEvent(ScanBarcodeEvent.OnOpenSettingsClicked) },
+                                        modifier = Modifier.padding(top = 20.dp)
+                                    ) {
+                                        Text(text = stringResource(id = R.string.scan_barcode_open_settings))
+                                    }
+                                }
+
+                                effectiveStatus.showRetryButton -> {
+                                    Button(
+                                        onClick = { onEvent(ScanBarcodeEvent.OnRetryClicked) },
+                                        modifier = Modifier.padding(top = 20.dp)
+                                    ) {
+                                        Text(text = stringResource(id = R.string.scan_barcode_retry))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ScanBarcodeBottomActions(
+    onTryOtherWayClicked: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+        ) {
+            Button(
+                onClick = onTryOtherWayClicked,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                )
+            ) {
+                Text(text = stringResource(id = R.string.scan_barcode_try_other_way))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScanBarcodeGuideOverlay(
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .width(296.dp)
+            .height(168.dp)
+            .border(
+                width = 2.dp,
+                color = Color.White.copy(alpha = 0.82f),
+                shape = RoundedCornerShape(28.dp)
+            )
+    )
 }
 
 @Composable

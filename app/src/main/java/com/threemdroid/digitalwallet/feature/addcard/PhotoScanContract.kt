@@ -7,14 +7,41 @@ import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 
 object PhotoScanRoutes {
     private const val baseRoute = "add_card/scan_card_photo"
-    const val routePattern = "$baseRoute?${AddCardRoutes.categoryIdArg}={${AddCardRoutes.categoryIdArg}}"
+    const val launchActionArg = "launchAction"
+    const val routePattern =
+        "$baseRoute?" +
+            "${AddCardRoutes.categoryIdArg}={${AddCardRoutes.categoryIdArg}}" +
+            "&$launchActionArg={$launchActionArg}"
 
-    fun photoScan(categoryId: String?): String =
-        if (categoryId.isNullOrBlank()) {
+    fun photoScan(
+        categoryId: String?,
+        launchAction: PhotoScanLaunchAction? = null
+    ): String {
+        val queryParameters = buildList {
+            categoryId?.takeIf { it.isNotBlank() }?.let { value ->
+                add("${AddCardRoutes.categoryIdArg}=${encodeRouteValue(value)}")
+            }
+            launchAction?.let { action ->
+                add("$launchActionArg=${encodeRouteValue(action.name)}")
+            }
+        }
+
+        return if (queryParameters.isEmpty()) {
             baseRoute
         } else {
-            "$baseRoute?${AddCardRoutes.categoryIdArg}=${encodeRouteValue(categoryId)}"
+            "$baseRoute?${queryParameters.joinToString(separator = "&")}"
         }
+    }
+}
+
+enum class PhotoScanLaunchAction {
+    TAKE_PHOTO,
+    CHOOSE_IMAGE;
+
+    companion object {
+        fun fromRouteValue(value: String?): PhotoScanLaunchAction? =
+            entries.firstOrNull { action -> action.name == value }
+    }
 }
 
 enum class PhotoScanStatus(

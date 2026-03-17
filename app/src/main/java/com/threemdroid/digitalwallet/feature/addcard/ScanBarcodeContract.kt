@@ -67,6 +67,12 @@ sealed interface ScanBarcodeEvent {
 
     data object OnOpenSettingsClicked : ScanBarcodeEvent
 
+    data object OnTakePhotoClicked : ScanBarcodeEvent
+
+    data object OnChooseImageClicked : ScanBarcodeEvent
+
+    data object OnTryOtherWayClicked : ScanBarcodeEvent
+
     data class OnPermissionStateResolved(val granted: Boolean) : ScanBarcodeEvent
 
     data class OnPermissionRequestResult(
@@ -92,6 +98,8 @@ sealed interface ScanBarcodeEffect {
     data object RequestCameraPermission : ScanBarcodeEffect
 
     data object OpenAppSettings : ScanBarcodeEffect
+
+    data class OpenRoute(val route: String) : ScanBarcodeEffect
 
     data class OpenConfirmation(val route: String) : ScanBarcodeEffect
 }
