@@ -1,0 +1,418 @@
+# IMPLEMENTATION_LOG
+
+Maintenance rule: update this file after every major task.
+
+## 1. Current Build Status
+- Verified on March 17, 2026.
+- Reminder notification deep-link handling applied on March 16, 2026.
+- Virtual `Favorites` category migration applied on March 16, 2026.
+- Reminder notification-permission handling update applied on March 16, 2026.
+- Route-aware bottom-bar shell update applied on March 16, 2026.
+- Docs-only release-triage update applied on March 16, 2026; no application code changed in this task.
+- Last known build/test status remains the previously verified green state.
+- `./gradlew :app:assembleDebug` completes successfully.
+- Focused cloud sync foundation verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.sync.*'`
+  - `./gradlew :app:assembleDebug`
+- Focused edit/delete verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest'`
+- Broader add-card/card-details verification also passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.*' --tests 'com.threemdroid.digitalwallet.feature.carddetails.*' --tests 'com.threemdroid.digitalwallet.data.card.CardRepositoryTest'`
+- Focused settings verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.app.AppThemeViewModelTest' --tests 'com.threemdroid.digitalwallet.data.settings.SettingsRepositoryTest' --tests 'com.threemdroid.digitalwallet.data.searchhistory.SearchHistoryRepositoryTest'`
+  - `./gradlew :app:assembleDebug`
+- Focused theme integration verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.app.AppThemeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.data.settings.SettingsRepositoryTest'`
+  - `./gradlew :app:assembleDebug`
+- Focused backup/restore/export verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.transfer.*' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.data.settings.SettingsRepositoryTest'`
+  - `./gradlew :app:assembleDebug`
+- Focused reminder verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.reminder.*'`
+  - `./gradlew :app:assembleDebug`
+- Build status is green for debug assemble and the current reminder scope.
+- The app now has a working shell with Home as the start destination and exactly three bottom navigation items: `Home`, `Add Card`, and `Settings`.
+- The app shell now renders the bottom bar only on the three top-level start destinations and hides it on deep routes such as Category Details, Card Details, add/edit flows, scanner/import flows, and Fullscreen Code View.
+- Local Room persistence, repository bindings, and Hilt DI wiring for categories, cards, search history, and app settings are now in place.
+- Local data foundation tests now cover repository behavior for categories, cards, search history, and settings.
+- Home now renders a repository-backed category grid with default category initialization.
+- Home category-grid state and initialization behavior now have dedicated automated tests.
+- Home now supports local custom category creation through a dialog flow with validation and persistence.
+- Category-creation tests now also verify default-color behavior and real repository-to-Home ordering after save.
+- Home now includes inline animated search with local previous-search persistence.
+- Home inline search tests now explicitly cover collapsed/expanded state transitions, previous-search persistence across Home ViewModel instances, search-result matching, and the absence of any separate Search route.
+- Category Details now loads the selected category and its cards through repository-backed MVI state, renders a 2-column grid, and exposes Add Card and Card Details navigation from the category context.
+- Category Details tests now explicitly cover category-scoped card loading with real repositories, empty state behavior, Add Card context effects, card selection effects, and all derived expiration badge states.
+- Category Details now also supports long-press drag-and-drop card reorder within the current category, with persisted local order that survives reload.
+- Category Details reorder coverage now includes ViewModel tests for in-memory reorder, cancel behavior, and finish-time persistence, plus repository-backed integration coverage for category-scoped ordering and reload-stable order after an edited card save.
+- Card Details now loads repository-backed persisted card data, handles missing optional fields cleanly, supports favorite toggling and deletion, and exposes navigation entry points for Edit and Fullscreen Code View.
+- Card Details tests now explicitly cover ViewModel loading, missing and blank optional-field mapping, favorite toggle behavior in both directions, edit/delete/fullscreen action effects, and repository-backed persistence after favorite/delete actions.
+- Card editing is now implemented by reusing the shared card confirmation form in edit mode, with repository-backed field updates, category changes, and clean return to Card Details after save.
+- Card edit coverage now includes shared-editor prefill tests and a Room-backed integration test for category moves, persisted updates, and source-category order compaction.
+- Card edit/delete coverage now also explicitly tests category-required validation in edit mode, repository-level category-move persistence, and Card Details missing-state transition after confirmed delete.
+- Fullscreen Code View is now implemented as a real feature with repository-backed loading, QR and linear barcode rendering, and brightness-maximizing behavior that restores the previous brightness state on exit.
+- Fullscreen Code tests now cover QR versus linear presentation state, missing-card handling, back navigation, and brightness maximize/restore behavior through a dedicated brightness abstraction.
+- Home now supports drag-and-drop category reorder with long-press start, persisted local ordering, `Favorites` pinned first, and `+ New Category` excluded from reorder.
+- Category reorder tests now explicitly cover cancel-path stability and verify that `+ New Category` never becomes part of persisted category ordering.
+- Add Card is now a real chooser screen with five method options and placeholder routes for each method flow.
+- Manual Entry is now implemented as the first real Add Card flow, with category preselection from Category Details, required-category validation, code-type selection, and local Room-backed save into the selected category.
+- Manual Entry tests now explicitly cover required-field validation, category-required behavior in generic Add Card entry, preselected category behavior from Category Details, successful save into the chosen category, and persistence of optional fields.
+- Scan barcode / QR code is now implemented as a real Add Card flow using Google Code Scanner, with a dedicated scan route, supported common wallet-code formats, and a confirmation handoff into the shared card editor before save.
+- Scan barcode / QR coverage now includes chooser-route propagation, scan state/effect tests, and confirmation-form prefill tests for scanned code type and value.
+- Scan barcode / QR tests now also cover real scan-to-confirmation orchestration, explicit no-auto-save behavior before confirmation, category-required validation in generic scan entry, launched-from-category preselection, and Room-backed persistence after confirmation save.
+- Scan card photo is now implemented as a real Add Card flow with capture and image-pick entry points, on-device assisted extraction for barcode/code data and OCR hints, and a review-focused confirmation handoff into the shared editor before save.
+- Scan card photo coverage now includes route propagation, photo-scan state/effect tests, confirmation-prefill tests for extracted name/card-number/code hints, and a repository-backed confirmation-save integration path.
+- Scan card photo tests now also explicitly cover fully empty extraction results, no-auto-save behavior before confirmation, and required manual review fields in the shared confirmation editor.
+- Smart scanning is now implemented as an assisted Add Card flow that offers live code scan, camera capture, and image-pick entry points while still requiring explicit confirmation before save.
+- Smart scanning coverage includes route propagation, smart-scan state/effect tests, confirmation-prefill tests for inferred values, and repository-backed confirmation-save/category-required integration coverage.
+- Smart scanning tests now also explicitly cover empty extraction fallback behavior and image-based inferred hints that still do not auto-assign a category or persist before confirmation.
+- Google Wallet import is now implemented as a limited MVP flow for realistic cases only: pasted shared pass text/links and Wallet pass images, both routed into the shared confirmation editor before save.
+- Google Wallet import coverage includes parser tests for supported shared text, ViewModel tests for text/image orchestration, and repository-backed integration tests for explicit confirmation and category-required save behavior.
+- Google Wallet import tests now also explicitly cover share-link-only and partial import cases, proving that unsupported fields are not invented and that manual completion is still required before persistence.
+- Settings is now implemented as a real grouped screen with MVI state, local settings persistence, Home search-history clearing, real backup/restore/export actions, and honest placeholder actions only for the remaining legal/feedback rows.
+- The app root now observes persisted `ThemeMode`, so Settings theme selection applies across the app instead of remaining screen-local state.
+- Settings now also supports real local backup, restore, and export through the document picker, with JSON backup, CSV card export, and explicit restore confirmation before replacing local wallet data.
+- Expiration reminders are now implemented with WorkManager-backed one-time scheduling, a small persisted reminder-state table to avoid duplicate notifications, Settings-driven enable/timing control, and repository-observed resync on card/settings changes.
+- Settings now also handles Android 13+ `POST_NOTIFICATIONS` permission for reminders, requests it when reminders are enabled without permission, and shows reminder status as enabled, disabled, or blocked.
+- Reminder notifications now open the app into the specific Card Details screen when the referenced card still exists, and safely fall back to Home when it does not.
+- Home and Category Details now show transient snackbar feedback when category or card reorder persistence fails, instead of silently resetting drag state.
+- Room schema export is now enabled with generated schema snapshots under `app/schemas`, and the current database migrations still compile with the export configuration in place.
+- Obsolete placeholder code from early navigation and detail-flow scaffolding has been removed, including dead Add Card placeholder-route scaffolding and unreferenced Card Details placeholder composables/strings.
+- Settings no longer exposes the Cloud Sync toggle in the current MVP release UI, and restore copy no longer advertises Cloud Sync preferences as part of the user-visible backup scope.
+- Crash-hardening fixes now guard against malformed persisted `LocalDate` values in Room and missing deep-route navigation arguments for Category Details, Card Details, and Fullscreen Code, degrading to existing missing-state UI instead of throwing.
+- Expiration reminder tests now also explicitly cover disabled-at-start behavior, reminder-plan emptiness for cards without expiration dates, and standalone cancellation when a previously scheduled card is deleted.
+- Settings reminder tests now also explicitly cover blocked reminder state and permission-request effects when reminders are enabled without notification permission.
+- A practical cloud sync foundation is now implemented with a local pending-change queue, persisted sync-status state, repository-level mutation recording for categories/cards/reorder/settings changes, and a startup syncer tied to the persisted Cloud Sync setting.
+- The current cloud sync remote path is intentionally honest rather than fake-complete: the default bound remote data source reports backend unavailability, pending changes remain queued locally, and Room remains the only source of truth.
+- Cloud sync foundation tests now cover successful outbound batch construction from current local state, backend-unavailable behavior that preserves pending changes, and app-level sync orchestration that only runs when the local Cloud Sync toggle is enabled.
+- Cloud sync foundation tests now also explicitly cover failure-state handling, queued upsert-to-delete collapse for the same entity, delete-batch mapping for categories/cards, and the fact that the device-local Cloud Sync toggle is not emitted as syncable settings data.
+- Stabilization verification passes for Home search navigation consistency:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.home.HomeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeSearchIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest'`
+  - `./gradlew :app:assembleDebug`
+- Full JVM MVP hardening verification passes:
+  - `./gradlew :app:testDebugUnitTest`
+- Focused Favorites-semantics verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeCategoryReorderIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsIntegrationTest' --tests 'com.threemdroid.digitalwallet.data.transfer.OfflineFirstUserDataTransferRepositoryTest'`
+  - `./gradlew :app:assembleDebug`
+- Focused reminder deep-link verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.app.ReminderLaunchViewModelTest' --tests 'com.threemdroid.digitalwallet.data.reminder.ExpirationReminderIntentsTest'`
+  - `./gradlew :app:assembleDebug`
+- Focused crash-hardening verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.core.database.DigitalWalletTypeConvertersTest' --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenCodeViewModelTest'`
+  - `./gradlew :app:assembleDebug`
+- Full JVM regression verification still passes after the latest crash-hardening updates:
+  - `./gradlew :app:testDebugUnitTest`
+  - `./gradlew :app:assembleDebug`
+
+## 2. Completed Work
+- Full MVP production-readiness review was completed and documented.
+- Release triage decisions were recorded:
+  - `Cloud Sync` moves out of current MVP release scope and into V1.1 until a real backend-connected implementation exists.
+  - `Favorites` must be converted from physical category membership into a virtual collection backed by `WalletCard.isFavorite`.
+  - Bottom navigation must render only on the three top-level destinations.
+  - Expiration reminders require proper notification-permission handling before release.
+  - Privacy Policy and Terms must be real release-ready destinations before release.
+- `Favorites` is now implemented as a virtual Home/category-details collection backed by `WalletCard.isFavorite`, and it no longer exists as a stored default category.
+- Category repository normalization now strips legacy stored `Favorites` categories during default-category maintenance, migrates any cards that were physically stored there into `Other`, and marks them favorite so existing data is preserved without a schema change.
+- Home still renders `Favorites` first, but persisted category ordering now excludes the virtual Favorites tile while keeping real-category reorder stable.
+- Category Details now treats `Favorites` as a non-reorderable virtual aggregate and opens generic Add Card flow from that context instead of trying to preselect a non-existent physical category.
+- Backup/restore compatibility coverage now includes old stored-Favorites payloads being normalized back into the new virtual-Favorites model.
+- Bottom navigation visibility is now route-aware in the app shell, with deep flows and Fullscreen Code no longer rendering the bottom bar.
+- Room migration hygiene was improved by enabling schema export in the database annotation, wiring the schema directory through KSP, and exposing that directory to `androidTest` assets for future migration tests.
+- Project structure and Gradle setup were inspected.
+- AI memory documentation was introduced under `docs/ai`.
+- `PROJECT_MEMORY.md` was rewritten as the current product and implementation source of truth.
+- Build verification was completed with a successful debug assemble.
+- Hilt was integrated at the application and activity level.
+- A production-ready base app shell was added with bottom navigation.
+- Navigation scaffolding was added with nested top-level graphs for `Home`, `Add Card`, and `Settings`.
+- Placeholder feature screens and Hilt-backed ViewModels were added for the three top-level destinations.
+- Room was added as the local persistence layer.
+- The local database schema now covers categories, cards, search history, and app settings.
+- Repository interfaces and offline-first implementations were added for categories, cards, search history, and settings.
+- Hilt modules now provide the Room database, DAOs, and repository bindings.
+- Category and card ordering persistence is represented through stable `position` fields and repository reorder operations.
+- Card persistence now enforces category linkage through both a Room foreign key and repository validation.
+- Repository-focused JVM tests were added for category persistence, card persistence, category-card linkage, ordering persistence, search history persistence, and settings persistence.
+- Reorder validation was tightened so duplicate ids are rejected for category and card ordering updates.
+- Home was upgraded from a placeholder to a real MVI-driven category grid screen.
+- Home now loads categories with card counts from the repository layer.
+- Missing default categories are initialized locally in canonical order, with `Favorites` pinned first.
+- Home includes a `+ New Category` tile at the end of the grid and placeholder navigation for category details and category creation.
+- Home ViewModel tests now verify favorites-first ordering, default category presence/order, category count inputs, category-creation/category-details effects, and the absence of unsupported Home state sections.
+- Category repository tests now cover default-category seeding and card-count aggregation that directly back the Home grid.
+- The Home create-category placeholder route was replaced with a real dialog destination.
+- A dedicated MVI-friendly create-category ViewModel and state/effect contract were added.
+- Category creation now validates required name input, defaults color selection from a fixed palette, persists locally through the repository layer, and dismisses back to Home on save.
+- New automated tests now cover custom-category creation persistence and create-category validation/save behavior.
+- Category-creation tests now also cover clearing validation state after user input, default-color save behavior, and real Home ordering after a successful save.
+- Home inline search is now implemented as an animated in-place interaction with no separate Search route.
+- Home search now matches category names, card names, and card numbers using local repository data only.
+- Previous search queries are now loaded from and persisted to local search history storage, and tapping a previous search re-runs it.
+- Home ViewModel tests now cover search expand/collapse, previous-search reuse, and match behavior for categories, card names, and card numbers.
+- Home search tests now also cover the initial collapsed state, persisted search-history reloading in a fresh Home ViewModel, and explicit verification that Home exposes no standalone Search destination.
+- Category Details is now implemented as a dedicated feature package with its own MVI contract, Hilt ViewModel, repository-backed loading, empty state, and card-details navigation.
+- Category Details ViewModel tests now cover loaded state, empty state, expiration-badge mapping, and navigation effects.
+- Category Details now also has a Room-backed integration test that proves only cards for the selected category are exposed to the screen state.
+- Category Details now also keeps a feature-local card reorder state that reorders the visible 2-column grid immediately and persists card `position` values through the existing card repository only when drag ends.
+- Card repository tests now also explicitly verify that card reorder is category-scoped and remains stable after a reordered card is edited and reloaded.
+- Card Details is now implemented as its own feature package with MVI state/effects, repository-backed loading from the selected card id, a detail layout for required and optional fields, persisted favorite toggle, delete confirmation, and navigation routes for Edit and Fullscreen Code View.
+- Card Details coverage now includes ViewModel tests for loading, null/blank optional-field handling, favorite toggling in both directions, delete flow, and navigation effects, plus repository-backed integration tests for persisted optional fields and favorite/delete actions.
+- Fullscreen Code View is now implemented in its own feature package with repository-backed card loading, QR/linear barcode presentation, ZXing-based bitmap rendering, and a testable brightness manager that restores the previous window brightness on exit.
+- Fullscreen Code coverage now includes ViewModel tests for presentation-state mapping and a dedicated unit test for brightness maximize/restore orchestration without hardware-dependent assertions.
+- Category reorder is now implemented on Home with long-press drag interaction, a working in-memory reorder state that persists on drop, repository enforcement that `Favorites` stays first, and reload-stable ordering across Home ViewModel instances.
+- Reorder coverage now includes repository tests for favorites-first persistence rules, Home ViewModel tests for reorder state/effects, and a Room-backed Home integration test for persistence after reload.
+- Category reorder coverage now also explicitly asserts that cancelling reorder does not persist changes and that the `+ New Category` tile never appears in persisted or reloaded category ordering.
+- Add Card is now implemented as a method chooser screen with exactly five options, MVI-friendly event/effect handling, graph-ready placeholder routes for each method, and Category Details navigation wired into the same chooser entry point.
+- Manual Entry is now implemented with its own MVI contract, Hilt ViewModel, category/code-type selectors, validation for required fields and date formatting, category-context preselection, and save navigation back into the selected Category Details screen.
+- Manual Entry coverage now includes chooser-route tests, ViewModel tests for preselection and validation, and verification that new cards are appended to the selected category ordering while the existing card repository tests continue to cover Room-backed persistence.
+- Manual Entry coverage now also explicitly asserts name and code-value required validation, generic-flow save after user category selection, and persistence of card number, expiration date, notes, and favorite state.
+- Barcode / QR scanning is now implemented with a dedicated MVI-friendly scanner route, Google Code Scanner integration, supported wallet-relevant barcode formats, and explicit retry/error handling without auto-save.
+- Successful barcode / QR scans now open a confirmation editor that reuses the existing card-entry form with prefilled category context, code type, and code value before local persistence.
+- Scan barcode / QR coverage now includes chooser-route propagation tests, scanner state/effect tests, and confirmation-prefill tests on the shared editor ViewModel.
+- Scan barcode / QR coverage now also includes a repository-backed integration test for category-context preselection, generic-flow category validation, no-auto-save before confirmation, and persistence after the confirmation save step.
+- Scan card photo is now implemented with a dedicated MVI-friendly route, capture/pick image actions, bundled on-device ML Kit barcode and text extraction, and explicit failure handling without auto-save.
+- Scan card photo now opens the shared confirmation editor with extracted barcode value, card number, and simple name hints when available, while still requiring user review and category selection before save.
+- Scan card photo coverage now includes chooser-route propagation, photo-scan ViewModel tests for capture/pick/extraction outcomes, confirmation-prefill coverage on the shared editor, and a repository-backed confirmation-save integration test.
+- Scan card photo coverage now also explicitly verifies the empty-extraction path, confirms that no card is persisted before user confirmation, and asserts that manual name/category/code input is still required after an empty extraction.
+- Smart scanning is now implemented with its own MVI-friendly route, shared use of live barcode scan plus photo-based extraction, and a distinct “inferred details” confirmation source before save.
+- Smart scanning now keeps category selection user-driven, does not auto-organize, and reuses the shared confirmation editor for final review of inferred code, card number, and optional name hints.
+- Smart scanning coverage includes chooser-route propagation, ViewModel tests for live scan/image actions and failure paths, confirmation-prefill coverage on the shared editor, and repository-backed integration tests for category-context persistence and generic-flow category validation.
+- Smart scanning coverage now also explicitly verifies empty-extraction fallback to manual review and confirms that inferred image hints still leave category selection unset until the user chooses one.
+- Google Wallet import is now implemented with its own MVI-friendly route, explicit support messaging, pasted shared-text/link parsing, image-pick import using the existing extractor, and a dedicated confirmation source before save.
+- Google Wallet import now stays honest about scope by supporting only realistic shared/exported Wallet content and by requiring user review plus category selection before any persistence.
+- Google Wallet import coverage includes parser tests, ViewModel orchestration tests, confirmation-prefill coverage on the shared editor, and repository-backed integration tests for category-context persistence and generic-flow category validation.
+- Google Wallet import coverage now also includes limited share-link-only and partial-import scenarios that require the user to complete missing fields and choose a category before any save.
+- Card editing now reuses the shared add/edit confirmation screen, preloads persisted card data, allows category changes, preserves category-required validation, and returns cleanly to Card Details after a successful repository-backed update.
+- Card edit coverage now includes shared-editor ViewModel tests plus a Room-backed integration test for moving a card between categories while keeping destination ordering append-only and compacting the source-category order.
+- Card edit/delete tests now also explicitly verify edit-mode category-required validation, repository-backed card moves between categories, and Card Details transitioning into missing-card state after confirmed delete.
+- Settings now uses a dedicated MVI ViewModel backed by `SettingsRepository` and `SearchHistoryRepository`, persists theme/brightness/reminder/cloud-sync toggles locally, clears Home search history, and exposes grouped action rows for the remaining MVP settings surface.
+- Settings coverage now explicitly verifies Light/Dark/System theme persistence, safe fallback to System when persisted settings are missing or reset, auto-brightness and reminder-setting persistence, the currently implemented local-only Cloud Sync toggle behavior, clear-search-history behavior, and real backup/restore/export action orchestration.
+- Settings coverage now includes ViewModel tests for persisted state loading, settings updates, search-history clearing, and app-root theme observation, while existing repository tests continue to verify local settings persistence, theme reset fallback, and search-history persistence.
+- Backup/restore/export now has dedicated repository and Settings ViewModel coverage for versioned JSON backup creation, restore preview and confirmed replacement, CSV export, local-data preservation around the restore path, and explicit restore dismissal without destructive apply.
+- Backup/restore/export coverage now also explicitly verifies relevant settings and persisted ordering round-trip on restore, CSV row ordering and spreadsheet-safe escaping, and rejection of invalid card-to-category restore payloads.
+- Expiration reminder coverage now includes schedule-calculation tests for all supported offsets, app-level sync orchestration tests for eligible versus ineligible cards and disabled reminders, and scheduler persistence/cancel tests for edit, delete, and settings-driven rescheduling behavior.
+- Cloud sync foundation now includes Room tables for pending sync changes and sync status, a repository-backed outbound sync batch builder for categories/cards/ordering/syncable settings, Hilt bindings for sync collaborators, and focused JVM tests for repository and syncer behavior.
+- Cloud sync coverage now explicitly verifies local-first safety under remote failure/unavailability, sync-state transitions to `FAILED` and `DISABLED`, category/card delete mapping, and disabled-syncer behavior when pending changes change locally.
+- Home search result handling is now consistent with the implemented quick-access flow: tapping a card match opens Card Details directly instead of routing through the parent category.
+- MVP test hardening now also covers restore-time replacement of persisted search history, verifies that sync retry batches use the latest local state after an earlier failure, and fixes a timing-sensitive category-creation integration test so it waits for the actual Home state update instead of assuming immediate delivery.
+- Crash/stability hardening now also converts scan-photo, smart-scan, and Google Wallet import launcher/setup failures into their existing failed UI states instead of allowing camera, picker, or scanner startup exceptions to crash the route.
+
+## 3. In Progress
+- No feature implementation is currently in progress.
+- Release-blocker follow-up still remains for Cloud Sync scope removal and real legal destinations.
+
+## 4. Pending Tasks
+- Remove `Cloud Sync` from shipped MVP release behavior and UI, or hide it behind deferred V1.1 scope until a real backend-connected sync implementation exists.
+- Replace Privacy Policy and Terms placeholders with real release-ready destinations.
+- Implement category editing flows.
+- Implement category editing and deeper card context actions inside Category Details.
+
+## 5. Known Constraints
+- Current codebase is still a single `app` module.
+- Core MVP local flows are implemented, but cloud sync is still foundation-only and does not have a real remote backend in this build.
+- Current code still reflects pre-triage behavior in a few places, including the Cloud Sync row and placeholder legal links.
+- Home and Category Details currently consume the repository layer in UI.
+- Home behavior is covered with ViewModel, repository, and integration tests; there are still no Compose UI tests for the grid or drag gesture, by design.
+- The create-category flow is covered with ViewModel and repository tests; there are still no Compose UI tests for the dialog, by design.
+- Category-creation integration coverage currently stops at repository plus ViewModel state; there are still no end-to-end UI interaction tests for the dialog, by design.
+- Home inline search is covered with ViewModel and repository tests; there are still no Compose UI interaction tests for the animated search bar, by design.
+- Category Details is covered with ViewModel plus repository-backed integration tests; there are still no Compose UI tests for the 2-column grid or drag gesture, by design.
+- Card Details is covered with ViewModel plus repository-backed integration tests; there are still no Compose UI tests for the detail layout or delete confirmation dialog, by design.
+- Fullscreen Code View is covered with ViewModel and brightness-manager tests; there are still no Compose UI tests for the fullscreen layout or bitmap rendering surface, by design.
+- Scan barcode / QR is covered with ViewModel plus repository-backed integration tests; there are still no instrumentation tests for the camera-scanner interaction itself, by design.
+- Scan card photo is covered with ViewModel plus repository-backed integration tests; there are still no instrumentation tests for camera/gallery launch or real ML Kit image extraction, by design.
+- Smart scanning is covered with ViewModel plus repository-backed integration tests; there are still no instrumentation tests for live camera/image-picker launch or real ML Kit extraction inside that flow, by design.
+- Google Wallet import is covered with parser, ViewModel, and repository-backed integration tests; there are still no instrumentation tests for external share-target handling because the current MVP import stays chooser-driven.
+- Expiration reminders are covered with JVM scheduler/sync tests and Settings ViewModel permission-flow tests; there are still no instrumentation tests for actual OS notification delivery or runtime permission prompting, by design.
+- Cloud sync is covered with JVM repository/syncer tests; there are still no end-to-end remote integration tests because no real backend is configured yet.
+- Backup/restore/export is covered with JVM repository and Settings ViewModel tests; there are still no instrumentation tests for the Android document picker itself, by design.
+- Hilt is configured through KSP in the current AGP built-in Kotlin setup.
+- The build currently relies on `android.disallowKotlinSourceSets=false` to allow KSP-generated sources with AGP built-in Kotlin.
+- Room schema export was enabled at schema version `3`; historical `1.json` and `2.json` snapshots were not previously exported and are therefore not retroactively available unless authored separately later.
+- The working directory is not a Git worktree, so Git-based change inspection is unavailable from this path.
+
+## 6. Known Risks
+- There is still a large gap between the documented target architecture and the current implementation.
+- If features are added without establishing the app skeleton first, architectural drift is likely.
+- Search, reorder, reminders, and sync can become inconsistent later if persistence models are not defined early.
+- The current build is not release-ready until the remaining triaged blockers are addressed: Cloud Sync scope mismatch and placeholder legal links.
+- A future real sync backend will still need explicit conflict policy, auth, and merge rules; the current foundation only handles safe outbound queuing from local state.
+- Google Wallet import scope can easily expand beyond supported cases unless kept tightly constrained.
+- The experimental Gradle compatibility flag for KSP may need to be revisited when the project build setup is modernized further.
+- Only the migrations from schema versions `1` to `2` and `2` to `3` are defined so far.
+- Default category normalization currently happens from Home startup; if a broader app startup initialization path is introduced later, this logic should move there.
+- Hilt module wiring is compile-validated, but there are no dedicated DI integration tests yet.
+- Custom category creation currently relies on a fixed palette and does not yet support editing after save.
+- Fullscreen code rendering falls back to plain text if bitmap generation fails for an unexpected code payload or format combination.
+- Manual Entry currently uses a typed `YYYY-MM-DD` expiration-date input rather than a date picker.
+- Scan barcode / QR currently depends on Google Code Scanner availability through Google Play services on the device.
+- Scan card photo uses conservative OCR heuristics for name and card-number hints, so partial extraction remains possible and user review is still required.
+- Smart scanning also depends on conservative inferred data and intentionally requires user confirmation instead of any automatic organization or category assignment.
+- Google Wallet import cannot read arbitrary Wallet items directly; it only supports the limited shared text/link and image cases surfaced in the current UI.
+- Home category reorder currently supports drag within the visible grid; auto-scroll during drag has not been implemented yet.
+- Category Details card reorder currently supports drag within the visible grid; auto-scroll during drag has not been implemented yet.
+- Privacy Policy and Terms are still placeholders in the current code and must be replaced before release.
+
+## 7. Changed Files
+- `docs/ai/IMPLEMENTATION_LOG.md`
+- `gradle/libs.versions.toml`
+- `build.gradle.kts`
+- `gradle.properties`
+- `app/build.gradle.kts`
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/res/values/strings.xml`
+- `app/src/main/java/com/threemdroid/digitalwallet/MainActivity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/app/DigitalWalletApplication.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/app/DigitalWalletApp.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/app/AppThemeViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/navigation/TopLevelDestination.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/navigation/DigitalWalletNavHost.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/HomeScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/AddCardScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/ManualEntryContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/ManualEntryViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/ManualEntryScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/ScanBarcodeContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/ScanBarcodeViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/ScanBarcodeScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanExtractor.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanModule.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanScreen.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/AddCardViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/ManualEntryViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanFlowIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/PhotoScanViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/EditCardFlowIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportFlowIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportTextParserTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/SmartScanFlowIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/SmartScanViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/ScanBarcodeFlowIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/addcard/ScanBarcodeViewModelTest.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportParser.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/GoogleWalletImportScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/SmartScanContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/SmartScanViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/addcard/SmartScanScreen.kt`
+- `app/src/main/res/xml/file_paths.xml`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/categorydetails/CategoryDetailsContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/categorydetails/CategoryDetailsScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/categorydetails/CategoryDetailsViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/carddetails/CardDetailsContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/carddetails/CardDetailsScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/carddetails/CardDetailsViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenCodeContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenCodeViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenCodeScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenCodeBitmapRenderer.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenBrightnessController.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/settings/SettingsContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/settings/SettingsScreen.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/settings/SettingsViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/ThemeMode.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/ReminderTiming.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/CardCodeType.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/Category.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/WalletCard.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/SearchHistoryEntry.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/AppSettings.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/CategoryWithCardCount.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/model/CloudSyncStatus.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/DigitalWalletDatabase.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/DigitalWalletTypeConverters.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/model/CategoryWithCardCountRow.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/model/PendingSyncSummaryRow.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/CategoryEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/CardEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/SearchHistoryEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/AppSettingsEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/CloudSyncStateEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/ExpirationReminderStateEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/entity/PendingSyncChangeEntity.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/CategoryDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/CardDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/CloudSyncStateDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/PendingSyncChangeDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/SearchHistoryDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/AppSettingsDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/dao/ExpirationReminderStateDao.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/database/mapper/DatabaseMappers.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/di/DatabaseModule.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/di/DataTransferModule.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/di/RepositoryModule.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/di/ReminderModule.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/core/di/SyncModule.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/category/CategoryRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/category/DefaultCategories.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/category/OfflineFirstCategoryRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/card/CardRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/card/OfflineFirstCardRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderRequest.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderScheduleCalculator.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderScheduler.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderSyncer.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderWorker.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderWorkBackend.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/WorkManagerExpirationReminderScheduler.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/reminder/WorkManagerExpirationReminderWorkBackend.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/CloudSyncBatch.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/CloudSyncRemoteDataSource.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/CloudSyncSyncer.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/OfflineFirstSyncRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/RoomSyncMutationRecorder.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/SyncChangeType.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/SyncEntityType.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/SyncMutationRecorder.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/SyncRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/sync/UnavailableCloudSyncRemoteDataSource.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/searchhistory/SearchHistoryRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/searchhistory/OfflineFirstSearchHistoryRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/settings/SettingsRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/settings/OfflineFirstSettingsRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/transfer/UserDataTransferRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/transfer/UserDataDocumentStore.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/transfer/ContentResolverUserDataDocumentStore.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/transfer/UserDataBackupJsonCodec.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/transfer/CardCsvExportFormatter.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/data/transfer/OfflineFirstUserDataTransferRepository.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/HomeContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/HomeNavigation.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/HomeViewModel.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/CreateCategoryContract.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/CreateCategoryDialog.kt`
+- `app/src/main/java/com/threemdroid/digitalwallet/feature/home/CreateCategoryViewModel.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/BaseRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/category/CategoryRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/card/CardRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderScheduleCalculatorTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/reminder/ExpirationReminderSyncerTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/reminder/WorkManagerExpirationReminderSchedulerTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/searchhistory/SearchHistoryRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/settings/SettingsRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/sync/CloudSyncSyncerTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/sync/SyncRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/data/transfer/OfflineFirstUserDataTransferRepositoryTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/home/CreateCategoryFlowIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/home/HomeCategoryReorderIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/home/CreateCategoryViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/home/HomeViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/home/HomeSearchIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/categorydetails/CategoryDetailsViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/categorydetails/CategoryDetailsIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/carddetails/CardDetailsViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/carddetails/CardDetailsIntegrationTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenCodeViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/fullscreencode/FullscreenBrightnessManagerTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/feature/settings/SettingsViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/app/AppThemeViewModelTest.kt`
+- `app/src/test/java/com/threemdroid/digitalwallet/testing/MainDispatcherRule.kt`
+- `app/src/main/res/values/plurals.xml`
+
+## 8. Next Recommended Task
+- Implement the release-blocker alignment pass: remove Cloud Sync from current MVP release behavior, convert `Favorites` to a virtual collection, hide bottom navigation on non-top-level routes, add reminder notification-permission handling, and wire real Privacy Policy / Terms destinations.

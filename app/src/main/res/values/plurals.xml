@@ -1,0 +1,10 @@
+<resources>
+    <plurals name="home_category_card_count">
+        <item quantity="one">%d card</item>
+        <item quantity="other">%d cards</item>
+    </plurals>
+    <plurals name="category_details_expires_in_days">
+        <item quantity="one">Expires in %d day</item>
+        <item quantity="other">Expires in %d days</item>
+    </plurals>
+</resources>
