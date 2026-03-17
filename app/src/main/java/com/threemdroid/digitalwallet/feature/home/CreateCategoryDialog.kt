@@ -7,8 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,7 +60,7 @@ fun CreateCategoryDialogRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CreateCategoryDialog(
     uiState: CreateCategoryUiState,
@@ -97,19 +96,24 @@ private fun CreateCategoryDialog(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold
                 )
-                FlowRow(
+                Column(
                     modifier = Modifier.padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    uiState.availableColorHexes.forEach { colorHex ->
-                        CreateCategoryColorSwatch(
-                            colorHex = colorHex,
-                            isSelected = colorHex == uiState.selectedColorHex,
-                            onClick = {
-                                onEvent(CreateCategoryEvent.OnColorSelected(colorHex))
+                    uiState.availableColorHexes.chunked(5).forEach { rowColors ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            rowColors.forEach { colorHex ->
+                                CreateCategoryColorSwatch(
+                                    colorHex = colorHex,
+                                    isSelected = colorHex == uiState.selectedColorHex,
+                                    onClick = {
+                                        onEvent(CreateCategoryEvent.OnColorSelected(colorHex))
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
                 if (uiState.isSaveErrorVisible) {

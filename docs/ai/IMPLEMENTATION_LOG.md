@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Create-category dialog runtime crash fix applied and validated on March 17, 2026.
 - Crash/stability audit follow-up applied and validated on March 17, 2026.
 - Release-build readiness hardening applied and validated on March 17, 2026.
 - Final cleanup pass applied and validated on March 17, 2026.
@@ -227,6 +228,9 @@ Maintenance rule: update this file after every major task.
 - Navigation crash-hardening now encodes persisted category/card ids before building path-based routes for Category Details, Card Details, edit-card, fullscreen code, and category-context Add Card entry, preventing invalid-route failures when restored or future external ids contain reserved URI characters.
 - Focused navigation safety verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.core.navigation.NavRouteEncodingTest' :app:assembleDebug :app:assembleRelease`
+- Create-category dialog no longer depends on `FlowRow`; the color swatch chooser now uses a simple fixed-row layout, avoiding the runtime `NoSuchMethodError` seen from the `FlowLayoutKt.FlowRow` signature mismatch on device.
+- Post-fix build verification passes:
+  - `./gradlew :app:assembleDebug :app:assembleRelease`
 
 ## 3. In Progress
 - No feature implementation is currently in progress.
