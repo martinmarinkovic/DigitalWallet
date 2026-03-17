@@ -15,6 +15,23 @@ internal object FavoritesCategory {
 
     fun isVirtual(categoryId: String): Boolean = categoryId == id
 
+    fun matchesReservedSemantics(category: Category): Boolean =
+        matchesReservedSemantics(
+            categoryId = category.id,
+            categoryName = category.name,
+            isFavorites = category.isFavorites
+        )
+
+    fun matchesReservedSemantics(
+        categoryId: String? = null,
+        categoryName: String? = null,
+        isFavorites: Boolean = false
+    ): Boolean =
+        isFavorites ||
+            categoryId == id ||
+            categoryId == legacyDefaultId ||
+            categoryName?.trim()?.equals(name, ignoreCase = true) == true
+
     fun isLegacyStoredCategory(category: CategoryEntity): Boolean =
         category.isFavorites ||
             category.id == legacyDefaultId ||

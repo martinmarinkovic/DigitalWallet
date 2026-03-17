@@ -2,6 +2,7 @@ package com.threemdroid.digitalwallet.data.category
 
 import com.threemdroid.digitalwallet.data.BaseRepositoryTest
 import com.threemdroid.digitalwallet.data.card.OfflineFirstCardRepository
+import com.threemdroid.digitalwallet.core.database.mapper.asEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -144,6 +145,34 @@ class CategoryRepositoryTest : BaseRepositoryTest() {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun createCustomCategory_rejectsReservedFavoritesName() {
+        runBlocking {
+            repository.createCustomCategory(
+                name = "Favorites",
+                color = "#123456"
+            )
+        }
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun upsertCategory_rejectsPersistingVirtualFavoritesCategory() = runBlocking {
+        repository.upsertCategory(
+            category(
+                id = FavoritesCategory.id,
+                name = "Favorites",
+                position = 0,
+                isDefault = true,
+                isFavorites = true
+            )
+        )
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun deleteCategory_rejectsVirtualFavoritesCategory() = runBlocking {
+        repository.deleteCategory(FavoritesCategory.id)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun updateCategoryOrder_rejectsMovingFavoritesAwayFromFirstPosition() = runBlocking {
         val firstCategory = category(id = "shopping", name = "Shopping", position = 0)
         val secondCategory = category(id = "membership", name = "Membership", position = 1)
@@ -217,14 +246,16 @@ class CategoryRepositoryTest : BaseRepositoryTest() {
             position = 1,
             isDefault = true
         )
-        repository.upsertCategories(listOf(legacyFavorites, transport))
-        cardRepository.upsertCard(
+        database.categoryDao().upsertCategories(
+            listOf(legacyFavorites.asEntity(), transport.asEntity())
+        )
+        database.cardDao().upsertCard(
             card(
                 id = "legacy-favorite-card",
                 categoryId = legacyFavorites.id,
                 position = 0,
                 isFavorite = false
-            )
+            ).asEntity()
         )
 
         repository.ensureDefaultCategories()

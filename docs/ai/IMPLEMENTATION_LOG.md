@@ -112,6 +112,9 @@ Maintenance rule: update this file after every major task.
 - Focused UX edge-case verification now passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.PhotoScanViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.SmartScanViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.GoogleWalletImportViewModelTest'`
   - `./gradlew :app:assembleDebug`
+- Focused data-integrity verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.data.transfer.OfflineFirstUserDataTransferRepositoryTest'`
+  - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
 - Full MVP production-readiness review was completed and documented.
@@ -210,6 +213,8 @@ Maintenance rule: update this file after every major task.
 - Performance hardening now moves ML Kit image loading/post-processing, fullscreen barcode bitmap generation, and backup/restore/export JSON-CSV serialization off the main thread, eliminating the most obvious ANR-class work from active user flows.
 - UX hardening now resets photo-scan, smart-scan image, and Google Wallet image-import routes back to actionable idle state after a successful handoff into confirmation, so backing out of confirmation no longer returns the user to a stale processing spinner.
 - Manual Entry now applies IME-aware padding so the form stays scrollable and the save action remains accessible while the keyboard is open.
+- Data-integrity hardening now rejects any attempt to persist a real stored category with reserved Favorites semantics, including creating a custom category named `Favorites`, upserting a category flagged as favorites, or deleting the virtual Favorites id through the repository API.
+- Legacy stored-Favorites migration coverage remains intact by seeding old invalid rows directly through DAO-level tests instead of through the now-guarded repository API.
 
 ## 3. In Progress
 - No feature implementation is currently in progress.

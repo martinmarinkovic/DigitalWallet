@@ -146,6 +146,9 @@ class OfflineFirstCategoryRepository @Inject constructor(
         require(normalizedName.isNotEmpty()) {
             "Category name is required."
         }
+        require(!FavoritesCategory.matchesReservedSemantics(categoryName = normalizedName)) {
+            "Favorites is a virtual category and cannot be created as a stored category."
+        }
 
         ensureDefaultCategories()
 
@@ -170,6 +173,7 @@ class OfflineFirstCategoryRepository @Inject constructor(
     }
 
     override suspend fun upsertCategory(category: Category) {
+        validatePersistedCategory(category)
         database.withTransaction {
             categoryDao.upsertCategory(category.asEntity())
             syncMutationRecorder.recordCategoryUpserts(listOf(category.id))
@@ -181,6 +185,7 @@ class OfflineFirstCategoryRepository @Inject constructor(
             return
         }
 
+        categories.forEach(::validatePersistedCategory)
         database.withTransaction {
             categoryDao.upsertCategories(categories.map { it.asEntity() })
             syncMutationRecorder.recordCategoryUpserts(categories.map { category -> category.id })
@@ -225,11 +230,26 @@ class OfflineFirstCategoryRepository @Inject constructor(
     }
 
     override suspend fun deleteCategory(categoryId: String) {
+        require(!FavoritesCategory.isVirtual(categoryId)) {
+            "Favorites is a virtual category and cannot be deleted as stored data."
+        }
         database.withTransaction {
             val deletedCardIds = database.cardDao().getIdsForCategory(categoryId)
             categoryDao.deleteCategory(categoryId)
             syncMutationRecorder.recordCategoryDeletes(listOf(categoryId))
             syncMutationRecorder.recordCardDeletes(deletedCardIds)
+        }
+    }
+
+    private fun validatePersistedCategory(category: Category) {
+        require(category.id.isNotBlank()) {
+            "Category id is required."
+        }
+        require(category.name.isNotBlank()) {
+            "Category name is required."
+        }
+        require(!FavoritesCategory.matchesReservedSemantics(category)) {
+            "Favorites is a virtual category and cannot be persisted as stored category data."
         }
     }
 
