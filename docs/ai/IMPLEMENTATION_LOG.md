@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Release-build readiness hardening applied and validated on March 17, 2026.
 - Final cleanup pass applied and validated on March 17, 2026.
 - Reminder notification deep-link handling applied on March 16, 2026.
 - Virtual `Favorites` category migration applied on March 16, 2026.
@@ -221,6 +222,7 @@ Maintenance rule: update this file after every major task.
 - Legacy stored-Favorites migration coverage remains intact by seeding old invalid rows directly through DAO-level tests instead of through the now-guarded repository API.
 - Permission/security hardening now limits reminder-notification deep-link consumption to a dedicated in-app reminder action instead of trusting any exported launcher intent that happens to carry the card-id extra.
 - Final cleanup pass removed default sample test files, stripped leftover Android Studio theme template comments/commented-out code, and removed the unused theme `Activity` import to keep the codebase production-ready and free of dead sample scaffolding.
+- Release configuration now exercises the real optimized path by enabling R8 minification and resource shrinking for `release`, and `./gradlew :app:assembleRelease` passes with the minified build.
 
 ## 3. In Progress
 - No feature implementation is currently in progress.
