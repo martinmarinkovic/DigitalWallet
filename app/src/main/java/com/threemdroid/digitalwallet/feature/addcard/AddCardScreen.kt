@@ -41,6 +41,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 import com.threemdroid.digitalwallet.core.navigation.TopLevelDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -55,7 +56,8 @@ object AddCardRoutes {
     const val categoryIdArg = "categoryId"
     const val chooserFromCategory = "add_card/category/{$categoryIdArg}"
 
-    fun chooserFromCategory(categoryId: String): String = "add_card/category/$categoryId"
+    fun chooserFromCategory(categoryId: String): String =
+        "add_card/category/${encodeRouteValue(categoryId)}"
 }
 
 enum class AddCardMethod(

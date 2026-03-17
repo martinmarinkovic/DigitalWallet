@@ -3,6 +3,7 @@ package com.threemdroid.digitalwallet.feature.addcard
 import androidx.annotation.StringRes
 import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.CardCodeType
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 
 object ScanBarcodeRoutes {
     private const val baseRoute = "add_card/scan_barcode_qr"

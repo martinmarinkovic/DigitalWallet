@@ -3,6 +3,7 @@ package com.threemdroid.digitalwallet.feature.addcard
 import android.net.Uri
 import androidx.annotation.StringRes
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 
 object PhotoScanRoutes {
     private const val baseRoute = "add_card/scan_card_photo"

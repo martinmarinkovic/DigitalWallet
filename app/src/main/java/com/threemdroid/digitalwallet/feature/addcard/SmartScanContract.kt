@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.annotation.StringRes
 import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.CardCodeType
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 
 object SmartScanRoutes {
     private const val baseRoute = "add_card/smart_scanning"

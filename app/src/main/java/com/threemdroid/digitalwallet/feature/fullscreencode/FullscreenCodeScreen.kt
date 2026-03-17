@@ -49,13 +49,15 @@ import androidx.compose.ui.unit.times
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 import kotlinx.coroutines.flow.collectLatest
 
 object FullscreenCodeRoutes {
     const val cardIdArg = "cardId"
     const val fullscreenCode = "home/card-details/{$cardIdArg}/fullscreen-code"
 
-    fun fullscreenCode(cardId: String): String = "home/card-details/$cardId/fullscreen-code"
+    fun fullscreenCode(cardId: String): String =
+        "home/card-details/${encodeRouteValue(cardId)}/fullscreen-code"
 }
 
 @Composable

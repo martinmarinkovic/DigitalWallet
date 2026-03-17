@@ -63,13 +63,15 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 import kotlinx.coroutines.flow.collectLatest
 
 object CategoryDetailsRoutes {
     const val categoryIdArg = "categoryId"
     const val categoryDetails = "home/category-details/{$categoryIdArg}"
 
-    fun categoryDetails(categoryId: String): String = "home/category-details/$categoryId"
+    fun categoryDetails(categoryId: String): String =
+        "home/category-details/${encodeRouteValue(categoryId)}"
 }
 
 @Composable

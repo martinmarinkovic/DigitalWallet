@@ -3,8 +3,7 @@ package com.threemdroid.digitalwallet.feature.addcard
 import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.CardCodeType
 import com.threemdroid.digitalwallet.core.model.displayLabel
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
+import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 
 enum class ManualEntrySource(
     val titleRes: Int,
@@ -187,10 +186,6 @@ object ManualEntryRoutes {
         }
     }
 }
-
-internal fun encodeRouteValue(value: String): String =
-    URLEncoder.encode(value, StandardCharsets.UTF_8.toString())
-        .replace("+", "%20")
 
 data class ManualEntryUiState(
     val titleRes: Int = R.string.manual_entry_title,
