@@ -81,6 +81,7 @@ class CategoryRepositoryTest : BaseRepositoryTest() {
         val homeCategories = repository.observeCategoriesWithCardCounts().first()
 
         assertEquals(expectedPersistedDefaultCategoryNames, persistedCategories.map { it.name })
+        assertEquals(expectedPersistedDefaultCategoryColors, persistedCategories.map { it.color })
         assertFalse(persistedCategories.any { it.isFavorites })
         assertEquals(expectedHomeDefaultCategoryNames, homeCategories.map { it.category.name })
         assertEquals(FavoritesCategory.id, homeCategories.first().category.id)
@@ -170,6 +171,24 @@ class CategoryRepositoryTest : BaseRepositoryTest() {
     @Test(expected = IllegalArgumentException::class)
     fun deleteCategory_rejectsVirtualFavoritesCategory() = runBlocking {
         repository.deleteCategory(FavoritesCategory.id)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun deleteCategory_rejectsDefaultStoredCategory() = runBlocking {
+        repository.ensureDefaultCategories()
+        repository.deleteCategory("default_access")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun deleteCategory_rejectsNonEmptyCustomCategory() = runBlocking {
+        repository.upsertCategory(
+            category(id = "campus", name = "Campus", position = 0, isDefault = false)
+        )
+        cardRepository.upsertCard(
+            card(id = "campus-card", categoryId = "campus", position = 0)
+        )
+
+        repository.deleteCategory("campus")
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -294,6 +313,17 @@ class CategoryRepositoryTest : BaseRepositoryTest() {
             "Access",
             "Library",
             "Other"
+        )
+
+        val expectedPersistedDefaultCategoryColors = listOf(
+            "#2563EB",
+            "#A855F7",
+            "#0891B2",
+            "#DC2626",
+            "#F97316",
+            "#16A34A",
+            "#4F46E5",
+            "#475569"
         )
     }
 }

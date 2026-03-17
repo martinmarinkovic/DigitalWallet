@@ -237,12 +237,12 @@ class CreateCategoryViewModelTest {
         fun defaultCategories(): List<CategoryWithCardCount> = listOf(
             categoryWithCount(FavoritesCategory.id, "Favorites", 0, "#F59E0B", true, true),
             categoryWithCount("default_shopping_loyalty", "Shopping & Loyalty", 1, "#2563EB", true, false),
-            categoryWithCount("default_membership", "Membership", 2, "#7C3AED", true, false),
-            categoryWithCount("default_transport", "Transport", 3, "#0F766E", true, false),
+            categoryWithCount("default_membership", "Membership", 2, "#A855F7", true, false),
+            categoryWithCount("default_transport", "Transport", 3, "#0891B2", true, false),
             categoryWithCount("default_tickets", "Tickets", 4, "#DC2626", true, false),
-            categoryWithCount("default_vouchers", "Vouchers", 5, "#EA580C", true, false),
-            categoryWithCount("default_access", "Access", 6, "#4B5563", true, false),
-            categoryWithCount("default_library", "Library", 7, "#1D4ED8", true, false),
+            categoryWithCount("default_vouchers", "Vouchers", 5, "#F97316", true, false),
+            categoryWithCount("default_access", "Access", 6, "#16A34A", true, false),
+            categoryWithCount("default_library", "Library", 7, "#4F46E5", true, false),
             categoryWithCount("default_other", "Other", 8, "#475569", true, false)
         )
 

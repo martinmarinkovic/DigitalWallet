@@ -32,6 +32,13 @@
     <string name="category_details_missing_title">Category unavailable</string>
     <string name="category_details_missing_message">This category could not be loaded.</string>
     <string name="category_details_card_reorder_failed_message">Unable to reorder cards. Try again.</string>
+    <string name="category_details_delete_action">Delete category</string>
+    <string name="category_details_delete_title">Delete category</string>
+    <string name="category_details_delete_message">This removes the category from your wallet. You can’t undo this action.</string>
+    <string name="category_details_delete_confirm">Delete</string>
+    <string name="category_details_delete_blocked_not_empty">Category must be empty before deletion</string>
+    <string name="category_details_delete_blocked_protected">This category cannot be deleted.</string>
+    <string name="category_details_delete_failed_message">Unable to delete category. Try again.</string>
     <string name="category_details_expires_today">Expires today</string>
     <string name="category_details_expired">Expired</string>
     <string name="card_details_title">Card Details</string>

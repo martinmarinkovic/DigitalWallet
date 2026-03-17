@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -150,6 +152,8 @@ private fun ManualEntryScreen(
     uiState: ManualEntryUiState,
     onEvent: (ManualEntryEvent) -> Unit
 ) {
+    val usesConfirmationKeyboardLayout = uiState.usesConfirmationKeyboardLayout()
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -166,7 +170,7 @@ private fun ManualEntryScreen(
                 }
             )
         },
-        bottomBar = if (!uiState.isLoading && !uiState.isCardMissing) {
+        bottomBar = if (!uiState.isLoading && !uiState.isCardMissing && !usesConfirmationKeyboardLayout) {
             {
                 Surface(
                     modifier = Modifier.imePadding(),
@@ -255,137 +259,227 @@ private fun ManualEntryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                uiState.reviewMessageRes?.let { reviewMessageRes ->
-                    item {
-                        Text(
-                            text = stringResource(id = reviewMessageRes),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = uiState.cardName,
-                        onValueChange = { onEvent(ManualEntryEvent.OnCardNameChanged(it)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(text = stringResource(id = R.string.manual_entry_card_name_label)) },
-                        enabled = !uiState.isSaving,
-                        singleLine = true,
-                        isError = uiState.cardNameError != null,
-                        supportingText = {
-                            if (uiState.cardNameError != null) {
-                                Text(text = stringResource(id = R.string.manual_entry_required_field_error))
-                            }
-                        }
-                    )
-                }
-
-                item {
-                    CategorySelector(
-                        categories = uiState.availableCategories,
-                        selectedCategoryId = uiState.selectedCategoryId,
-                        enabled = !uiState.isSaving,
-                        isError = uiState.categoryError != null,
-                        onCategorySelected = { categoryId ->
-                            onEvent(ManualEntryEvent.OnCategorySelected(categoryId))
-                        }
-                    )
-                }
-
-                item {
-                    CodeTypeSelector(
-                        codeTypes = uiState.availableCodeTypes,
-                        selectedCodeType = uiState.selectedCodeType,
-                        enabled = !uiState.isSaving,
-                        onCodeTypeSelected = { codeType ->
-                            onEvent(ManualEntryEvent.OnCodeTypeSelected(codeType))
-                        }
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = uiState.codeValue,
-                        onValueChange = { onEvent(ManualEntryEvent.OnCodeValueChanged(it)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(text = stringResource(id = R.string.manual_entry_code_value_label)) },
-                        enabled = !uiState.isSaving,
-                        singleLine = true,
-                        isError = uiState.codeValueError != null,
-                        supportingText = {
-                            if (uiState.codeValueError != null) {
-                                Text(text = stringResource(id = R.string.manual_entry_required_field_error))
-                            }
-                        }
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = uiState.cardNumber,
-                        onValueChange = { onEvent(ManualEntryEvent.OnCardNumberChanged(it)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(text = stringResource(id = R.string.manual_entry_card_number_label)) },
-                        enabled = !uiState.isSaving,
-                        singleLine = true
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = uiState.expirationDateInput,
-                        onValueChange = { onEvent(ManualEntryEvent.OnExpirationDateChanged(it)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(text = stringResource(id = R.string.manual_entry_expiration_date_label)) },
-                        placeholder = { Text(text = stringResource(id = R.string.manual_entry_expiration_date_placeholder)) },
-                        enabled = !uiState.isSaving,
-                        singleLine = true,
-                        isError = uiState.expirationDateError != null,
-                        supportingText = {
-                            Text(
-                                text = if (uiState.expirationDateError != null) {
-                                    stringResource(id = R.string.manual_entry_expiration_date_error)
-                                } else {
-                                    stringResource(id = R.string.manual_entry_expiration_date_supporting_text)
-                                }
-                            )
-                        }
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = uiState.notes,
-                        onValueChange = { onEvent(ManualEntryEvent.OnNotesChanged(it)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(text = stringResource(id = R.string.manual_entry_notes_label)) },
-                        enabled = !uiState.isSaving,
-                        minLines = 3
-                    )
-                }
-
-                item {
-                    FavoriteToggleRow(
-                        checked = uiState.isFavorite,
-                        enabled = !uiState.isSaving,
-                        onCheckedChange = { isFavorite ->
-                            onEvent(ManualEntryEvent.OnFavoriteChanged(isFavorite))
-                        }
-                    )
-                }
+            if (usesConfirmationKeyboardLayout) {
+                ConfirmationManualEntryLayout(
+                    uiState = uiState,
+                    onEvent = onEvent
+                )
+            } else {
+                StandardManualEntryLayout(
+                    uiState = uiState,
+                    onEvent = onEvent
+                )
             }
         }
     }
 }
+
+@Composable
+private fun StandardManualEntryLayout(
+    uiState: ManualEntryUiState,
+    onEvent: (ManualEntryEvent) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                ManualEntryFormFields(
+                    uiState = uiState,
+                    onEvent = onEvent
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConfirmationManualEntryLayout(
+    uiState: ManualEntryUiState,
+    onEvent: (ManualEntryEvent) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            ManualEntryFormFields(
+                uiState = uiState,
+                onEvent = onEvent
+            )
+        }
+
+        Surface(
+            shadowElevation = 6.dp
+        ) {
+            ManualEntrySaveBar(
+                uiState = uiState,
+                onEvent = onEvent
+            )
+        }
+    }
+}
+
+@Composable
+private fun ManualEntryFormFields(
+    uiState: ManualEntryUiState,
+    onEvent: (ManualEntryEvent) -> Unit
+) {
+    uiState.reviewMessageRes?.let { reviewMessageRes ->
+        Text(
+            text = stringResource(id = reviewMessageRes),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    OutlinedTextField(
+        value = uiState.cardName,
+        onValueChange = { onEvent(ManualEntryEvent.OnCardNameChanged(it)) },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(text = stringResource(id = R.string.manual_entry_card_name_label)) },
+        enabled = !uiState.isSaving,
+        singleLine = true,
+        isError = uiState.cardNameError != null,
+        supportingText = {
+            if (uiState.cardNameError != null) {
+                Text(text = stringResource(id = R.string.manual_entry_required_field_error))
+            }
+        }
+    )
+
+    CategorySelector(
+        categories = uiState.availableCategories,
+        selectedCategoryId = uiState.selectedCategoryId,
+        enabled = !uiState.isSaving,
+        isError = uiState.categoryError != null,
+        onCategorySelected = { categoryId ->
+            onEvent(ManualEntryEvent.OnCategorySelected(categoryId))
+        }
+    )
+
+    CodeTypeSelector(
+        codeTypes = uiState.availableCodeTypes,
+        selectedCodeType = uiState.selectedCodeType,
+        enabled = !uiState.isSaving,
+        onCodeTypeSelected = { codeType ->
+            onEvent(ManualEntryEvent.OnCodeTypeSelected(codeType))
+        }
+    )
+
+    OutlinedTextField(
+        value = uiState.codeValue,
+        onValueChange = { onEvent(ManualEntryEvent.OnCodeValueChanged(it)) },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(text = stringResource(id = R.string.manual_entry_code_value_label)) },
+        enabled = !uiState.isSaving,
+        singleLine = true,
+        isError = uiState.codeValueError != null,
+        supportingText = {
+            if (uiState.codeValueError != null) {
+                Text(text = stringResource(id = R.string.manual_entry_required_field_error))
+            }
+        }
+    )
+
+    OutlinedTextField(
+        value = uiState.cardNumber,
+        onValueChange = { onEvent(ManualEntryEvent.OnCardNumberChanged(it)) },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(text = stringResource(id = R.string.manual_entry_card_number_label)) },
+        enabled = !uiState.isSaving,
+        singleLine = true
+    )
+
+    OutlinedTextField(
+        value = uiState.expirationDateInput,
+        onValueChange = { onEvent(ManualEntryEvent.OnExpirationDateChanged(it)) },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(text = stringResource(id = R.string.manual_entry_expiration_date_label)) },
+        placeholder = { Text(text = stringResource(id = R.string.manual_entry_expiration_date_placeholder)) },
+        enabled = !uiState.isSaving,
+        singleLine = true,
+        isError = uiState.expirationDateError != null,
+        supportingText = {
+            Text(
+                text = if (uiState.expirationDateError != null) {
+                    stringResource(id = R.string.manual_entry_expiration_date_error)
+                } else {
+                    stringResource(id = R.string.manual_entry_expiration_date_supporting_text)
+                }
+            )
+        }
+    )
+
+    OutlinedTextField(
+        value = uiState.notes,
+        onValueChange = { onEvent(ManualEntryEvent.OnNotesChanged(it)) },
+        modifier = Modifier.fillMaxWidth(),
+        label = { Text(text = stringResource(id = R.string.manual_entry_notes_label)) },
+        enabled = !uiState.isSaving,
+        minLines = 3
+    )
+
+    FavoriteToggleRow(
+        checked = uiState.isFavorite,
+        enabled = !uiState.isSaving,
+        onCheckedChange = { isFavorite ->
+            onEvent(ManualEntryEvent.OnFavoriteChanged(isFavorite))
+        }
+    )
+}
+
+@Composable
+private fun ManualEntrySaveBar(
+    uiState: ManualEntryUiState,
+    onEvent: (ManualEntryEvent) -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        if (uiState.isSaveErrorVisible) {
+            Text(
+                text = stringResource(id = R.string.manual_entry_save_error_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        Button(
+            onClick = { onEvent(ManualEntryEvent.OnSaveClicked) },
+            enabled = !uiState.isSaving,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = if (uiState.isSaveErrorVisible) 12.dp else 0.dp)
+        ) {
+            if (uiState.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(end = 12.dp),
+                    strokeWidth = 2.dp
+                )
+            }
+            Text(text = stringResource(id = uiState.saveButtonRes))
+        }
+    }
+}
+
+private fun ManualEntryUiState.usesConfirmationKeyboardLayout(): Boolean =
+    titleRes == R.string.scan_barcode_confirmation_title ||
+        titleRes == R.string.scan_card_photo_confirmation_title ||
+        titleRes == R.string.smart_scan_confirmation_title ||
+        titleRes == R.string.google_wallet_import_confirmation_title
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)

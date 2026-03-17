@@ -234,10 +234,23 @@ class OfflineFirstCategoryRepository @Inject constructor(
             "Favorites is a virtual category and cannot be deleted as stored data."
         }
         database.withTransaction {
+            val category = categoryDao.getCategoriesByIds(listOf(categoryId)).firstOrNull()
+                ?: return@withTransaction
+            require(
+                !category.isDefault &&
+                    !category.isFavorites &&
+                    !DefaultCategories.isDefaultCategoryId(category.id) &&
+                    !FavoritesCategory.matchesReservedSemantics(categoryId = category.id, categoryName = category.name)
+            ) {
+                "Protected categories cannot be deleted."
+            }
+
             val deletedCardIds = database.cardDao().getIdsForCategory(categoryId)
+            require(deletedCardIds.isEmpty()) {
+                "Category must be empty before deletion."
+            }
             categoryDao.deleteCategory(categoryId)
             syncMutationRecorder.recordCategoryDeletes(listOf(categoryId))
-            syncMutationRecorder.recordCardDeletes(deletedCardIds)
         }
     }
 

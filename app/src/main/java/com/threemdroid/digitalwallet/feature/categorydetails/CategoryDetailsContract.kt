@@ -7,7 +7,9 @@ data class CategoryDetailsUiState(
     val cards: List<CategoryDetailsCardUiModel> = emptyList(),
     val isCategoryMissing: Boolean = false,
     val isCardReordering: Boolean = false,
-    val isCardReorderEnabled: Boolean = true
+    val isCardReorderEnabled: Boolean = true,
+    val isDeleteConfirmationVisible: Boolean = false,
+    val isDeleteInProgress: Boolean = false
 ) {
     val isEmpty: Boolean
         get() = !isLoading && !isCategoryMissing && cards.isEmpty()
@@ -38,6 +40,12 @@ sealed interface CategoryDetailsEvent {
 
     data object OnAddCardClicked : CategoryDetailsEvent
 
+    data object OnDeleteClicked : CategoryDetailsEvent
+
+    data object OnDeleteDismissed : CategoryDetailsEvent
+
+    data object OnDeleteConfirmed : CategoryDetailsEvent
+
     data class OnCardClicked(val cardId: String) : CategoryDetailsEvent
 
     data class OnCardReorderStarted(val cardId: String) : CategoryDetailsEvent
@@ -60,4 +68,6 @@ sealed interface CategoryDetailsEffect {
     data class OpenCardDetails(val cardId: String) : CategoryDetailsEffect
 
     data object ShowCardReorderFailedMessage : CategoryDetailsEffect
+
+    data class ShowDeleteMessage(val messageRes: Int) : CategoryDetailsEffect
 }

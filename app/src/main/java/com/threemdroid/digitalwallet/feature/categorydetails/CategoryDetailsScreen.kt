@@ -22,6 +22,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,6 +56,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,10 +87,11 @@ fun CategoryDetailsRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     val cardReorderFailedMessage =
         stringResource(id = R.string.category_details_card_reorder_failed_message)
 
-    LaunchedEffect(viewModel, snackbarHostState, cardReorderFailedMessage) {
+    LaunchedEffect(viewModel, snackbarHostState, cardReorderFailedMessage, context) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 CategoryDetailsEffect.NavigateBack -> onNavigateBack()
@@ -94,6 +99,9 @@ fun CategoryDetailsRoute(
                 is CategoryDetailsEffect.OpenCardDetails -> onOpenCardDetails(effect.cardId)
                 CategoryDetailsEffect.ShowCardReorderFailedMessage -> {
                     snackbarHostState.showSnackbar(cardReorderFailedMessage)
+                }
+                is CategoryDetailsEffect.ShowDeleteMessage -> {
+                    snackbarHostState.showSnackbar(context.getString(effect.messageRes))
                 }
             }
         }
@@ -139,8 +147,22 @@ private fun CategoryDetailsScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { onEvent(CategoryDetailsEvent.OnAddCardClicked) }) {
-                        Text(text = stringResource(id = R.string.nav_add_card))
+                    IconButton(
+                        onClick = { onEvent(CategoryDetailsEvent.OnDeleteClicked) },
+                        enabled = !uiState.isDeleteInProgress
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = stringResource(
+                                id = R.string.category_details_delete_action
+                            )
+                        )
+                    }
+                    IconButton(onClick = { onEvent(CategoryDetailsEvent.OnAddCardClicked) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = stringResource(id = R.string.nav_add_card)
+                        )
                     }
                 }
             )
@@ -210,6 +232,28 @@ private fun CategoryDetailsScreen(
                 )
             }
         }
+    }
+
+    if (uiState.isDeleteConfirmationVisible) {
+        AlertDialog(
+            onDismissRequest = { onEvent(CategoryDetailsEvent.OnDeleteDismissed) },
+            title = {
+                Text(text = stringResource(id = R.string.category_details_delete_title))
+            },
+            text = {
+                Text(text = stringResource(id = R.string.category_details_delete_message))
+            },
+            confirmButton = {
+                TextButton(onClick = { onEvent(CategoryDetailsEvent.OnDeleteConfirmed) }) {
+                    Text(text = stringResource(id = R.string.category_details_delete_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onEvent(CategoryDetailsEvent.OnDeleteDismissed) }) {
+                    Text(text = stringResource(id = R.string.create_category_cancel))
+                }
+            }
+        )
     }
 }
 

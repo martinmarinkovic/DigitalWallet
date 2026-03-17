@@ -4,6 +4,10 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Add Card arrow tint / Settings arrow removal correction applied and validated on March 17, 2026.
+- Add Card and Settings Home-aligned styling update applied and validated on March 17, 2026.
+- Confirm-scan IME layout fix applied and validated on March 17, 2026.
+- Default-category palette alignment and safe category-delete flow applied and validated on March 17, 2026.
 - Bottom-bar safe-area inset fix applied and validated on March 17, 2026.
 - Bottom-bar fixed-height override applied and validated on March 17, 2026.
 - Bottom-bar standard-height restoration applied and validated on March 17, 2026.
@@ -39,6 +43,12 @@ Maintenance rule: update this file after every major task.
   - `./gradlew :app:assembleDebug`
 - Focused theme integration verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.app.AppThemeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.data.settings.SettingsRepositoryTest'`
+  - `./gradlew :app:assembleDebug`
+- Focused category-details/default-category verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeViewModelTest' :app:assembleDebug`
+- Focused confirm-scan layout verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' :app:assembleDebug`
+- Focused Add Card / Settings styling verification passes:
   - `./gradlew :app:assembleDebug`
 - Focused backup/restore/export verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.transfer.*' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.data.settings.SettingsRepositoryTest'`
@@ -257,6 +267,11 @@ Maintenance rule: update this file after every major task.
 - The bottom bar now uses a full-width rectangular container with no rounded corners, no outer padding, and no shadow. The earlier visible gap above the bar was caused by combining outer bar padding with `navigationBarsPadding()` on the bar container itself; inset handling is now moved inside the bar row so the surface stays flush to the bottom edge while content still clears gesture and 3-button navigation areas correctly.
 - The bottom bar is now taller and visually less compressed: the main row height increased, Home and Settings now sit in fixed-height centered lanes, and the Add action was nudged up in size just enough to stay dominant without feeling larger than the bar itself.
 - Category creation now exposes exactly 15 visually distinct color choices across the spectrum, renders them in a balanced 3x5 swatch grid, and uses a clearer selected state with a check-marked inner ring. Focused tests now verify the exact palette, uniqueness count, and that a chosen custom color persists through the repository layer and appears in the Home category-tile UI state.
+- Default categories now also use distinct colors from that same 15-color palette, so seeded Home categories visually align with the current category-color system instead of the old mixed default palette.
+- Category Details now uses icon-only toolbar actions for delete and add, and category deletion is guarded by a confirmation dialog plus safe-delete rules: only empty custom categories can be deleted, while Favorites, default categories, and categories that still contain cards are blocked without destructive cascade deletion.
+- The shared add-card confirmation editor now uses a dedicated IME-safe layout for scan/import confirmation variants: one root `Column` with `imePadding()`, a vertically scrollable form region, and an anchored save section. This removes the previous double-handling of keyboard/bottom-bar insets that could collapse the visible form when the keyboard opened on Confirm Scan.
+- Add Card and Settings now visually align with Home by explicitly using the theme `background` color for the full screen surface and the theme `surface` color for their method/section cards, matching the same pure black/white page background and dark-gray/light-gray chrome already used by Home/top bar/bottom bar. Settings action rows now also show orange chevrons using the app accent color.
+- Add Card method rows now use the app accent color for their trailing chevrons, while Settings action rows have been returned to their original no-chevron layout so only Add Card carries the orange arrow treatment.
 - The bottom bar now uses a more standard bottom-navigation height again: the main bar row is back to an `80dp` class height, the side-action lanes are slightly taller, and the Add action scales with it so the composition feels like a normal production bottom nav instead of a compressed custom strip.
 - The bottom bar height is now hard-forced instead of being partially driven by inset padding: the container itself is explicitly `80dp` tall, the row fills that fixed shell, and the side-item click lanes now match the bar height so vertical centering is stable and no longer content-sized.
 - Bottom-bar system-inset handling is now separated from the fixed interactive shell: the clickable bar content stays in a hard `80dp` row, while a same-color bottom inset extension is rendered underneath using the navigation-bar window inset. This keeps the controls above the system nav area without reintroducing the old visible gap above the bar.

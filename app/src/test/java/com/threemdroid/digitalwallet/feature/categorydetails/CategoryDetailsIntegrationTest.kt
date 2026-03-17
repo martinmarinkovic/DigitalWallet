@@ -1,6 +1,7 @@
 package com.threemdroid.digitalwallet.feature.categorydetails
 
 import androidx.lifecycle.SavedStateHandle
+import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.data.BaseRepositoryTest
 import com.threemdroid.digitalwallet.data.card.OfflineFirstCardRepository
 import com.threemdroid.digitalwallet.data.category.FavoritesCategory
@@ -8,6 +9,7 @@ import com.threemdroid.digitalwallet.data.category.OfflineFirstCategoryRepositor
 import com.threemdroid.digitalwallet.testing.MainDispatcherRule
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -174,6 +176,71 @@ class CategoryDetailsIntegrationTest : BaseRepositoryTest() {
             state.cards[1].expirationBadge?.status
         )
         assertNull(state.cards[2].expirationBadge)
+    }
+
+    @Test
+    fun deleteEmptyCustomCategory_removesCategoryAndNavigatesBack() = runTest {
+        categoryRepository.ensureDefaultCategories()
+        val customCategory = categoryRepository.createCustomCategory(
+            name = "Campus",
+            color = "#123456"
+        )
+        val viewModel = CategoryDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CategoryDetailsRoutes.categoryIdArg to customCategory.id)
+            ),
+            categoryRepository = categoryRepository,
+            cardRepository = cardRepository
+        )
+
+        advanceUntilIdle()
+
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+        assertTrue(viewModel.uiState.value.isDeleteConfirmationVisible)
+
+        val deleteEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteConfirmed)
+        advanceUntilIdle()
+
+        assertEquals(CategoryDetailsEffect.NavigateBack, deleteEffect.await())
+        assertEquals(null, categoryRepository.observeCategory(customCategory.id).first())
+    }
+
+    @Test
+    fun deleteCategory_withCards_isBlockedAndLeavesDataIntact() = runTest {
+        categoryRepository.ensureDefaultCategories()
+        val customCategory = categoryRepository.createCustomCategory(
+            name = "Campus",
+            color = "#123456"
+        )
+        cardRepository.upsertCard(
+            card(
+                id = "campus-pass",
+                categoryId = customCategory.id,
+                position = 0,
+                name = "Campus Pass"
+            )
+        )
+        val viewModel = CategoryDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CategoryDetailsRoutes.categoryIdArg to customCategory.id)
+            ),
+            categoryRepository = categoryRepository,
+            cardRepository = cardRepository
+        )
+
+        advanceUntilIdle()
+        val loadedState = viewModel.uiState.first { uiState ->
+            !uiState.isLoading && uiState.cards.map { it.id } == listOf("campus-pass")
+        }
+        assertEquals(listOf("campus-pass"), loadedState.cards.map { it.id })
+
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
+        assertEquals(customCategory.id, categoryRepository.observeCategory(customCategory.id).first()?.id)
+        assertEquals(listOf("campus-pass"), cardRepository.observeCards(customCategory.id).first().map { it.id })
     }
 
     @Test

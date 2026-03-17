@@ -1,6 +1,7 @@
 package com.threemdroid.digitalwallet.feature.categorydetails
 
 import androidx.lifecycle.SavedStateHandle
+import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.CardCodeType
 import com.threemdroid.digitalwallet.core.model.Category
 import com.threemdroid.digitalwallet.core.model.CategoryWithCardCount
@@ -287,6 +288,165 @@ class CategoryDetailsViewModelTest {
     }
 
     @Test
+    fun onDeleteClicked_forVirtualFavorites_emitsProtectedMessage() = runTest {
+        val viewModel = CategoryDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CategoryDetailsRoutes.categoryIdArg to FavoritesCategory.id)
+            ),
+            categoryRepository = FakeCategoryRepository(
+                categories = listOf(FavoritesCategory.create())
+            ),
+            cardRepository = FakeCardRepository()
+        )
+
+        advanceUntilIdle()
+
+        val deleteEffect = async { viewModel.effects.first() }
+        advanceUntilIdle()
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+
+        assertEquals(
+            CategoryDetailsEffect.ShowDeleteMessage(
+                R.string.category_details_delete_blocked_protected
+            ),
+            deleteEffect.await()
+        )
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
+    }
+
+    @Test
+    fun onDeleteClicked_forDefaultCategory_emitsProtectedMessage() = runTest {
+        val viewModel = createViewModelForCategory("default_access")
+
+        advanceUntilIdle()
+
+        val deleteEffect = async { viewModel.effects.first() }
+        advanceUntilIdle()
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+
+        assertEquals(
+            CategoryDetailsEffect.ShowDeleteMessage(
+                R.string.category_details_delete_blocked_protected
+            ),
+            deleteEffect.await()
+        )
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
+    }
+
+    @Test
+    fun onDeleteClicked_forNonEmptyCustomCategory_emitsBlockedMessage() = runTest {
+        val customCategory = category(
+            id = "custom_campus",
+            name = "Campus",
+            color = "#123456",
+            position = 8,
+            isDefault = false
+        )
+        val viewModel = CategoryDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CategoryDetailsRoutes.categoryIdArg to customCategory.id)
+            ),
+            categoryRepository = FakeCategoryRepository(categories = listOf(customCategory)),
+            cardRepository = FakeCardRepository(
+                cards = listOf(
+                    walletCard(
+                        id = "campus-card",
+                        name = "Campus Pass",
+                        categoryId = customCategory.id,
+                        codeType = CardCodeType.QR_CODE,
+                        expirationDate = null,
+                        position = 0
+                    )
+                )
+            )
+        )
+
+        advanceUntilIdle()
+
+        val deleteEffect = async { viewModel.effects.first() }
+        advanceUntilIdle()
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+
+        assertEquals(
+            CategoryDetailsEffect.ShowDeleteMessage(
+                R.string.category_details_delete_blocked_not_empty
+            ),
+            deleteEffect.await()
+        )
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
+    }
+
+    @Test
+    fun deleteEmptyCustomCategory_showsConfirmationAndNavigatesBackOnSuccess() = runTest {
+        val customCategory = category(
+            id = "custom_campus",
+            name = "Campus",
+            color = "#123456",
+            position = 8,
+            isDefault = false
+        )
+        val categoryRepository = FakeCategoryRepository(categories = listOf(customCategory))
+        val viewModel = CategoryDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CategoryDetailsRoutes.categoryIdArg to customCategory.id)
+            ),
+            categoryRepository = categoryRepository,
+            cardRepository = FakeCardRepository()
+        )
+
+        advanceUntilIdle()
+
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+        assertTrue(viewModel.uiState.value.isDeleteConfirmationVisible)
+
+        val deleteEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteConfirmed)
+        advanceUntilIdle()
+
+        assertEquals(CategoryDetailsEffect.NavigateBack, deleteEffect.await())
+        assertEquals(1, categoryRepository.deleteCategoryCallCount)
+        assertEquals(customCategory.id, categoryRepository.lastDeletedCategoryId)
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
+    }
+
+    @Test
+    fun deleteEmptyCustomCategory_failureEmitsErrorMessage() = runTest {
+        val customCategory = category(
+            id = "custom_campus",
+            name = "Campus",
+            color = "#123456",
+            position = 8,
+            isDefault = false
+        )
+        val categoryRepository = FakeCategoryRepository(
+            categories = listOf(customCategory),
+            failDeleteCategory = true
+        )
+        val viewModel = CategoryDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CategoryDetailsRoutes.categoryIdArg to customCategory.id)
+            ),
+            categoryRepository = categoryRepository,
+            cardRepository = FakeCardRepository()
+        )
+
+        advanceUntilIdle()
+
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteClicked)
+        val deleteEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(CategoryDetailsEvent.OnDeleteConfirmed)
+        advanceUntilIdle()
+
+        assertEquals(
+            CategoryDetailsEffect.ShowDeleteMessage(
+                R.string.category_details_delete_failed_message
+            ),
+            deleteEffect.await()
+        )
+        assertFalse(viewModel.uiState.value.isDeleteInProgress)
+    }
+
+    @Test
     fun reorderCards_updatesInMemoryOrderAndPersistsOnlyOnFinish() = runTest {
         val cardRepository = FakeCardRepository(
             cards = listOf(
@@ -541,9 +701,12 @@ class CategoryDetailsViewModelTest {
     }
 
     private class FakeCategoryRepository(
-        categories: List<Category> = emptyList()
+        categories: List<Category> = emptyList(),
+        private val failDeleteCategory: Boolean = false
     ) : CategoryRepository {
         private val categoriesFlow = MutableStateFlow(categories)
+        var deleteCategoryCallCount: Int = 0
+        var lastDeletedCategoryId: String? = null
 
         override fun observeCategories(): Flow<List<Category>> = categoriesFlow
 
@@ -578,7 +741,14 @@ class CategoryDetailsViewModelTest {
         }
 
         override suspend fun deleteCategory(categoryId: String) {
-            error("Not needed for CategoryDetailsViewModelTest")
+            deleteCategoryCallCount += 1
+            lastDeletedCategoryId = categoryId
+            if (failDeleteCategory) {
+                error("delete failure")
+            }
+            categoriesFlow.value = categoriesFlow.value.filterNot { category ->
+                category.id == categoryId
+            }
         }
     }
 
@@ -660,14 +830,16 @@ class CategoryDetailsViewModelTest {
             id: String,
             name: String,
             color: String,
-            position: Int
+            position: Int,
+            isDefault: Boolean = true,
+            isFavorites: Boolean = false
         ): Category =
             Category(
                 id = id,
                 name = name,
                 color = color,
-                isDefault = true,
-                isFavorites = false,
+                isDefault = isDefault,
+                isFavorites = isFavorites,
                 position = position,
                 createdAt = fixedTimestamp,
                 updatedAt = fixedTimestamp

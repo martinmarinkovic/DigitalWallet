@@ -3,11 +3,13 @@ package com.threemdroid.digitalwallet.feature.categorydetails
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.Category
 import com.threemdroid.digitalwallet.core.model.WalletCard
 import com.threemdroid.digitalwallet.core.model.displayLabel
 import com.threemdroid.digitalwallet.data.card.CardRepository
 import com.threemdroid.digitalwallet.data.category.CategoryRepository
+import com.threemdroid.digitalwallet.data.category.DefaultCategories
 import com.threemdroid.digitalwallet.data.category.FavoritesCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -106,6 +108,16 @@ class CategoryDetailsViewModel @Inject constructor(
                 }
             }
 
+            CategoryDetailsEvent.OnDeleteClicked -> onDeleteClicked()
+
+            CategoryDetailsEvent.OnDeleteDismissed -> {
+                mutableUiState.update { current ->
+                    current.copy(isDeleteConfirmationVisible = false)
+                }
+            }
+
+            CategoryDetailsEvent.OnDeleteConfirmed -> deleteCategory()
+
             CategoryDetailsEvent.OnBackClicked -> {
                 viewModelScope.launch {
                     mutableEffects.emit(CategoryDetailsEffect.NavigateBack)
@@ -136,6 +148,43 @@ class CategoryDetailsViewModel @Inject constructor(
                     mutableEffects.emit(CategoryDetailsEffect.OpenCardDetails(event.cardId))
                 }
             }
+        }
+    }
+
+    private fun onDeleteClicked() {
+        val resolvedCategoryId = categoryId ?: return
+        if (uiState.value.isDeleteInProgress) {
+            return
+        }
+
+        val blockedMessageRes = when {
+            FavoritesCategory.isVirtual(resolvedCategoryId) ||
+                DefaultCategories.isDefaultCategoryId(resolvedCategoryId) -> {
+                R.string.category_details_delete_blocked_protected
+            }
+
+            cardsState.value?.isNotEmpty() == true -> {
+                R.string.category_details_delete_blocked_not_empty
+            }
+
+            cardsState.value == null -> {
+                null
+            }
+
+            else -> {
+                null
+            }
+        }
+
+        if (blockedMessageRes != null) {
+            viewModelScope.launch {
+                mutableEffects.emit(CategoryDetailsEffect.ShowDeleteMessage(blockedMessageRes))
+            }
+            return
+        }
+
+        mutableUiState.update { current ->
+            current.copy(isDeleteConfirmationVisible = true)
         }
     }
 
@@ -230,6 +279,37 @@ class CategoryDetailsViewModel @Inject constructor(
         }
     }
 
+    private fun deleteCategory() {
+        val resolvedCategoryId = categoryId ?: return
+        if (uiState.value.isDeleteInProgress) {
+            return
+        }
+
+        mutableUiState.update { current ->
+            current.copy(
+                isDeleteConfirmationVisible = false,
+                isDeleteInProgress = true
+            )
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                categoryRepository.deleteCategory(resolvedCategoryId)
+            }.onSuccess {
+                mutableEffects.emit(CategoryDetailsEffect.NavigateBack)
+            }.onFailure {
+                mutableUiState.update { current ->
+                    current.copy(isDeleteInProgress = false)
+                }
+                mutableEffects.emit(
+                    CategoryDetailsEffect.ShowDeleteMessage(
+                        R.string.category_details_delete_failed_message
+                    )
+                )
+            }
+        }
+    }
+
     private fun Category?.toUiState(
         cards: List<WalletCard>?,
         reorderState: CategoryDetailsCardReorderState
@@ -272,7 +352,9 @@ class CategoryDetailsViewModel @Inject constructor(
                 )
             },
             isCardReordering = reorderState.isActive,
-            isCardReorderEnabled = !isFavorites
+            isCardReorderEnabled = !isFavorites,
+            isDeleteConfirmationVisible = uiState.value.isDeleteConfirmationVisible,
+            isDeleteInProgress = uiState.value.isDeleteInProgress
         )
     }
 

@@ -270,14 +270,14 @@ class OfflineFirstUserDataTransferRepositoryTest : BaseRepositoryTest() {
                     id = "default_membership",
                     name = "Membership",
                     position = 1,
-                    color = "#7C3AED",
+                    color = "#A855F7",
                     isDefault = true
                 ),
                 category(
                     id = "default_transport",
                     name = "Transport",
                     position = 2,
-                    color = "#0F766E",
+                    color = "#0891B2",
                     isDefault = true
                 ),
                 category(
@@ -291,21 +291,21 @@ class OfflineFirstUserDataTransferRepositoryTest : BaseRepositoryTest() {
                     id = "default_vouchers",
                     name = "Vouchers",
                     position = 4,
-                    color = "#EA580C",
+                    color = "#F97316",
                     isDefault = true
                 ),
                 category(
                     id = "default_access",
                     name = "Access",
                     position = 5,
-                    color = "#4B5563",
+                    color = "#16A34A",
                     isDefault = true
                 ),
                 category(
                     id = "default_library",
                     name = "Library",
                     position = 6,
-                    color = "#1D4ED8",
+                    color = "#4F46E5",
                     isDefault = true
                 ),
                 category(
