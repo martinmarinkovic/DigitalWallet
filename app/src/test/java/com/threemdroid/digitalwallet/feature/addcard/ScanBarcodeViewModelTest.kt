@@ -6,11 +6,10 @@ import com.threemdroid.digitalwallet.testing.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -20,54 +19,97 @@ class ScanBarcodeViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun onScreenOpened_launchesScannerOnlyOnce() = runTest {
+    fun permissionGranted_startsScannerInitialization() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
-        val firstEffect = async { viewModel.effects.first() }
 
-        viewModel.onEvent(ScanBarcodeEvent.OnScreenOpened)
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
+
+        assertEquals(ScanBarcodeStatus.INITIALIZING, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun permissionMissing_showsPermissionUiInsteadOfLoader() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = false))
+
+        assertEquals(ScanBarcodeStatus.PERMISSION_REQUIRED, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun permissionButtonClicked_requestsCameraPermission() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+        val deferredEffect = async { viewModel.effects.first() }
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionButtonClicked)
         advanceUntilIdle()
 
-        assertEquals(ScanBarcodeEffect.LaunchScanner, firstEffect.await())
+        assertEquals(ScanBarcodeEffect.RequestCameraPermission, deferredEffect.await())
+    }
 
-        viewModel.onEvent(ScanBarcodeEvent.OnScreenOpened)
-        advanceUntilIdle()
+    @Test
+    fun permissionDeniedPermanently_showsBlockedState() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
 
-        assertNull(
-            withTimeoutOrNull(50) {
-                viewModel.effects.first()
-            }
+        viewModel.onEvent(
+            ScanBarcodeEvent.OnPermissionRequestResult(
+                granted = false,
+                shouldShowRationale = false
+            )
         )
-        assertEquals(ScanBarcodeStatus.LAUNCHING, viewModel.uiState.value.status)
+
+        assertEquals(ScanBarcodeStatus.PERMISSION_BLOCKED, viewModel.uiState.value.status)
     }
 
     @Test
-    fun onRetryClicked_relaunchesScanner() = runTest {
+    fun openSettingsClicked_emitsOpenAppSettings() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
-        val retryEffect = async { viewModel.effects.first() }
+        val deferredEffect = async { viewModel.effects.first() }
 
-        viewModel.onEvent(ScanBarcodeEvent.OnRetryClicked)
+        viewModel.onEvent(ScanBarcodeEvent.OnOpenSettingsClicked)
         advanceUntilIdle()
 
-        assertEquals(ScanBarcodeEffect.LaunchScanner, retryEffect.await())
-        assertEquals(ScanBarcodeStatus.LAUNCHING, viewModel.uiState.value.status)
+        assertEquals(ScanBarcodeEffect.OpenAppSettings, deferredEffect.await())
     }
 
     @Test
-    fun onScanCancelled_updatesStateForRetry() = runTest {
+    fun scannerInitialized_marksScannerActive() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
 
-        viewModel.onEvent(ScanBarcodeEvent.OnScanCancelled)
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
+        viewModel.onEvent(ScanBarcodeEvent.OnScannerInitialized)
 
-        assertEquals(ScanBarcodeStatus.CANCELLED, viewModel.uiState.value.status)
+        assertEquals(ScanBarcodeStatus.ACTIVE, viewModel.uiState.value.status)
     }
 
     @Test
-    fun onScanFailed_updatesStateForRetry() = runTest {
+    fun scannerInitializationFailed_updatesStateForRetry() = runTest {
         val viewModel = ScanBarcodeViewModel(SavedStateHandle())
 
-        viewModel.onEvent(ScanBarcodeEvent.OnScanFailed)
+        viewModel.onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
 
         assertEquals(ScanBarcodeStatus.FAILED, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun initializationTimeout_fallsBackToFailed() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+
+        viewModel.onEvent(ScanBarcodeEvent.OnPermissionStateResolved(granted = true))
+        advanceTimeBy(8_001)
+        advanceUntilIdle()
+
+        assertEquals(ScanBarcodeStatus.FAILED, viewModel.uiState.value.status)
+    }
+
+    @Test
+    fun retryClicked_restartsScannerInitialization() = runTest {
+        val viewModel = ScanBarcodeViewModel(SavedStateHandle())
+
+        viewModel.onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
+        viewModel.onEvent(ScanBarcodeEvent.OnRetryClicked)
+
+        assertEquals(ScanBarcodeStatus.INITIALIZING, viewModel.uiState.value.status)
     }
 
     @Test

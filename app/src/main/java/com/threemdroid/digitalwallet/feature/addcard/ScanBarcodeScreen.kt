@@ -1,12 +1,29 @@
 package com.threemdroid.digitalwallet.feature.addcard
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -16,30 +33,41 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.google.mlkit.vision.common.InputImage
 import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.CardCodeType
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.collectLatest
 
 fun NavGraphBuilder.scanBarcodeScreen(
@@ -72,68 +100,66 @@ private fun ScanBarcodeRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
-    val scanner = remember(activity) {
-        activity?.let { currentActivity ->
-            GmsBarcodeScanning.getClient(
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnNavigateBack by rememberUpdatedState(onNavigateBack)
+    val currentOnNavigateToConfirmation by rememberUpdatedState(onNavigateToConfirmation)
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val shouldShowRationale = activity?.let { currentActivity ->
+            ActivityCompat.shouldShowRequestPermissionRationale(
                 currentActivity,
-                GmsBarcodeScannerOptions.Builder()
-                    .setBarcodeFormats(
-                        Barcode.FORMAT_QR_CODE,
-                        Barcode.FORMAT_AZTEC,
-                        Barcode.FORMAT_PDF417,
-                        Barcode.FORMAT_CODE_128,
-                        Barcode.FORMAT_CODE_39,
-                        Barcode.FORMAT_EAN_13,
-                        Barcode.FORMAT_EAN_8,
-                        Barcode.FORMAT_UPC_A,
-                        Barcode.FORMAT_UPC_E,
-                        Barcode.FORMAT_ITF
-                    )
-                    .build()
+                Manifest.permission.CAMERA
             )
-        }
+        } == true
+        viewModel.onEvent(
+            ScanBarcodeEvent.OnPermissionRequestResult(
+                granted = granted,
+                shouldShowRationale = shouldShowRationale
+            )
+        )
+    }
+
+    LaunchedEffect(viewModel, context) {
+        viewModel.onEvent(
+            ScanBarcodeEvent.OnPermissionStateResolved(
+                granted = context.hasCameraPermission()
+            )
+        )
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.onEvent(ScanBarcodeEvent.OnScreenOpened)
-    }
-
-    LaunchedEffect(viewModel, scanner) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
-                ScanBarcodeEffect.NavigateBack -> onNavigateBack()
-                ScanBarcodeEffect.LaunchScanner -> {
-                    val barcodeScanner = scanner
-                    if (barcodeScanner == null) {
-                        viewModel.onEvent(ScanBarcodeEvent.OnScanFailed)
-                    } else {
-                        barcodeScanner.startScan()
-                            .addOnSuccessListener { barcode ->
-                                val codeValue = barcode.rawValue
-                                    ?.takeIf { value -> value.isNotBlank() }
-                                    ?: barcode.displayValue?.takeIf { value -> value.isNotBlank() }
-                                if (codeValue == null) {
-                                    viewModel.onEvent(ScanBarcodeEvent.OnScanFailed)
-                                } else {
-                                    viewModel.onEvent(
-                                        ScanBarcodeEvent.OnScanSucceeded(
-                                            codeType = barcode.format.toCardCodeType(),
-                                            codeValue = codeValue
-                                        )
-                                    )
-                                }
-                            }
-                            .addOnCanceledListener {
-                                viewModel.onEvent(ScanBarcodeEvent.OnScanCancelled)
-                            }
-                            .addOnFailureListener {
-                                viewModel.onEvent(ScanBarcodeEvent.OnScanFailed)
-                            }
-                    }
+                ScanBarcodeEffect.NavigateBack -> currentOnNavigateBack()
+                is ScanBarcodeEffect.OpenConfirmation -> {
+                    currentOnNavigateToConfirmation(effect.route)
                 }
-
-                is ScanBarcodeEffect.OpenConfirmation -> onNavigateToConfirmation(effect.route)
+                ScanBarcodeEffect.RequestCameraPermission -> {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+                ScanBarcodeEffect.OpenAppSettings -> {
+                    openAppSettings(context)
+                }
             }
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, viewModel, context) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(
+                    ScanBarcodeEvent.OnPermissionStateResolved(
+                        granted = context.hasCameraPermission()
+                    )
+                )
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -172,13 +198,47 @@ private fun ScanBarcodeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (uiState.status == ScanBarcodeStatus.LAUNCHING) {
+                if (uiState.status.showScannerPreview) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(360.dp)
+                            .background(
+                                color = Color.Black,
+                                shape = RoundedCornerShape(24.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ScanBarcodeCameraPreview(
+                            modifier = Modifier.fillMaxSize(),
+                            onInitialized = {
+                                onEvent(ScanBarcodeEvent.OnScannerInitialized)
+                            },
+                            onInitializationFailed = {
+                                onEvent(ScanBarcodeEvent.OnScannerInitializationFailed)
+                            },
+                            onCodeDetected = { codeType, codeValue ->
+                                onEvent(
+                                    ScanBarcodeEvent.OnScanSucceeded(
+                                        codeType = codeType,
+                                        codeValue = codeValue
+                                    )
+                                )
+                            }
+                        )
+
+                        if (uiState.status.showProgress) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
+                    }
+                } else if (uiState.status.showProgress) {
                     CircularProgressIndicator()
                 }
+
                 Text(
                     text = stringResource(id = uiState.status.titleRes),
                     modifier = Modifier.padding(top = 20.dp),
@@ -191,16 +251,203 @@ private fun ScanBarcodeScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
-                if (uiState.status.showRetryButton) {
-                    Button(
-                        onClick = { onEvent(ScanBarcodeEvent.OnRetryClicked) },
-                        modifier = Modifier.padding(top = 20.dp)
-                    ) {
-                        Text(text = stringResource(id = R.string.scan_barcode_retry))
+
+                when {
+                    uiState.status.showPermissionButton -> {
+                        Button(
+                            onClick = { onEvent(ScanBarcodeEvent.OnPermissionButtonClicked) },
+                            modifier = Modifier.padding(top = 20.dp)
+                        ) {
+                            Text(text = stringResource(id = R.string.scan_barcode_allow_camera))
+                        }
+                    }
+
+                    uiState.status.showOpenSettingsButton -> {
+                        OutlinedButton(
+                            onClick = { onEvent(ScanBarcodeEvent.OnOpenSettingsClicked) },
+                            modifier = Modifier.padding(top = 20.dp)
+                        ) {
+                            Text(text = stringResource(id = R.string.scan_barcode_open_settings))
+                        }
+                    }
+
+                    uiState.status.showRetryButton -> {
+                        Button(
+                            onClick = { onEvent(ScanBarcodeEvent.OnRetryClicked) },
+                            modifier = Modifier.padding(top = 20.dp)
+                        ) {
+                            Text(text = stringResource(id = R.string.scan_barcode_retry))
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ScanBarcodeCameraPreview(
+    modifier: Modifier = Modifier,
+    onInitialized: () -> Unit,
+    onInitializationFailed: () -> Unit,
+    onCodeDetected: (CardCodeType, String) -> Unit
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val previewView = remember(context) {
+        PreviewView(context).apply {
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+    val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
+    val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
+    val barcodeScanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_QR_CODE,
+                    Barcode.FORMAT_AZTEC,
+                    Barcode.FORMAT_PDF417,
+                    Barcode.FORMAT_CODE_128,
+                    Barcode.FORMAT_CODE_39,
+                    Barcode.FORMAT_EAN_13,
+                    Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_UPC_E,
+                    Barcode.FORMAT_ITF
+                )
+                .build()
+        )
+    }
+    val currentOnInitialized by rememberUpdatedState(onInitialized)
+    val currentOnInitializationFailed by rememberUpdatedState(onInitializationFailed)
+    val currentOnCodeDetected by rememberUpdatedState(onCodeDetected)
+
+    DisposableEffect(barcodeScanner, analysisExecutor) {
+        onDispose {
+            barcodeScanner.close()
+            analysisExecutor.shutdown()
+        }
+    }
+
+    AndroidView(
+        factory = { previewView },
+        modifier = modifier
+    )
+
+    DisposableEffect(lifecycleOwner, previewView, context, barcodeScanner, analysisExecutor) {
+        val detectedCode = AtomicBoolean(false)
+        val isProcessingFrame = AtomicBoolean(false)
+        var isDisposed = false
+        var boundCameraProvider: ProcessCameraProvider? = null
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+
+        val listener = Runnable {
+            if (isDisposed) {
+                return@Runnable
+            }
+
+            runCatching {
+                val cameraProvider = cameraProviderFuture.get()
+                boundCameraProvider = cameraProvider
+
+                val preview = Preview.Builder()
+                    .build()
+                    .also { cameraPreview ->
+                        cameraPreview.surfaceProvider = previewView.surfaceProvider
+                    }
+
+                val analysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                    .also { imageAnalysis ->
+                        imageAnalysis.setAnalyzer(analysisExecutor) { imageProxy ->
+                            if (detectedCode.get()) {
+                                imageProxy.close()
+                                return@setAnalyzer
+                            }
+                            if (!isProcessingFrame.compareAndSet(false, true)) {
+                                imageProxy.close()
+                                return@setAnalyzer
+                            }
+
+                            val mediaImage = imageProxy.image
+                            if (mediaImage == null) {
+                                isProcessingFrame.set(false)
+                                imageProxy.close()
+                                return@setAnalyzer
+                            }
+
+                            val inputImage = InputImage.fromMediaImage(
+                                mediaImage,
+                                imageProxy.imageInfo.rotationDegrees
+                            )
+                            barcodeScanner.process(inputImage)
+                                .addOnSuccessListener { barcodes ->
+                                    val barcode = barcodes.firstOrNull { candidate ->
+                                        !candidate.rawValue.isNullOrBlank() ||
+                                            !candidate.displayValue.isNullOrBlank()
+                                    }
+                                    val codeValue = barcode?.rawValue
+                                        ?.takeIf { value -> value.isNotBlank() }
+                                        ?: barcode?.displayValue?.takeIf { value ->
+                                            value.isNotBlank()
+                                        }
+
+                                    if (
+                                        barcode != null &&
+                                            codeValue != null &&
+                                            detectedCode.compareAndSet(false, true)
+                                    ) {
+                                        currentOnCodeDetected(
+                                            barcode.format.toCardCodeType(),
+                                            codeValue
+                                        )
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    // Ignore per-frame processing failures and keep the scanner active.
+                                }
+                                .addOnCompleteListener {
+                                    isProcessingFrame.set(false)
+                                    imageProxy.close()
+                                }
+                        }
+                    }
+
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview,
+                    analysis
+                )
+                currentOnInitialized()
+            }.onFailure {
+                if (!isDisposed) {
+                    currentOnInitializationFailed()
+                }
+            }
+        }
+
+        cameraProviderFuture.addListener(listener, mainExecutor)
+
+        onDispose {
+            isDisposed = true
+            boundCameraProvider?.unbindAll()
+        }
+    }
+}
+
+private fun openAppSettings(context: Context) {
+    runCatching {
+        context.startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", context.packageName, null)
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
     }
 }
 
@@ -210,6 +457,12 @@ private fun Context.findActivity(): Activity? =
         is ContextWrapper -> baseContext.findActivity()
         else -> null
     }
+
+private fun Context.hasCameraPermission(): Boolean =
+    ContextCompat.checkSelfPermission(
+        this,
+        Manifest.permission.CAMERA
+    ) == PackageManager.PERMISSION_GRANTED
 
 private fun Int.toCardCodeType(): CardCodeType =
     when (this) {

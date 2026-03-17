@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Scan barcode / QR startup fix applied and validated on March 17, 2026.
 - Create-category dialog runtime crash fix applied and validated on March 17, 2026.
 - Crash/stability audit follow-up applied and validated on March 17, 2026.
 - Release-build readiness hardening applied and validated on March 17, 2026.
@@ -61,7 +62,7 @@ Maintenance rule: update this file after every major task.
 - Add Card is now a real chooser screen with five method options and placeholder routes for each method flow.
 - Manual Entry is now implemented as the first real Add Card flow, with category preselection from Category Details, required-category validation, code-type selection, and local Room-backed save into the selected category.
 - Manual Entry tests now explicitly cover required-field validation, category-required behavior in generic Add Card entry, preselected category behavior from Category Details, successful save into the chosen category, and persistence of optional fields.
-- Scan barcode / QR code is now implemented as a real Add Card flow using Google Code Scanner, with a dedicated scan route, supported common wallet-code formats, and a confirmation handoff into the shared card editor before save.
+- Scan barcode / QR code is now implemented as a real Add Card flow with an in-screen CameraX + ML Kit scanner, explicit permission/init/error states, supported common wallet-code formats, and a confirmation handoff into the shared card editor before save.
 - Scan barcode / QR coverage now includes chooser-route propagation, scan state/effect tests, and confirmation-form prefill tests for scanned code type and value.
 - Scan barcode / QR tests now also cover real scan-to-confirmation orchestration, explicit no-auto-save behavior before confirmation, category-required validation in generic scan entry, launched-from-category preselection, and Room-backed persistence after confirmation save.
 - Scan card photo is now implemented as a real Add Card flow with capture and image-pick entry points, on-device assisted extraction for barcode/code data and OCR hints, and a review-focused confirmation handoff into the shared editor before save.
@@ -187,7 +188,7 @@ Maintenance rule: update this file after every major task.
 - Manual Entry is now implemented with its own MVI contract, Hilt ViewModel, category/code-type selectors, validation for required fields and date formatting, category-context preselection, and save navigation back into the selected Category Details screen.
 - Manual Entry coverage now includes chooser-route tests, ViewModel tests for preselection and validation, and verification that new cards are appended to the selected category ordering while the existing card repository tests continue to cover Room-backed persistence.
 - Manual Entry coverage now also explicitly asserts name and code-value required validation, generic-flow save after user category selection, and persistence of card number, expiration date, notes, and favorite state.
-- Barcode / QR scanning is now implemented with a dedicated MVI-friendly scanner route, Google Code Scanner integration, supported wallet-relevant barcode formats, and explicit retry/error handling without auto-save.
+- Barcode / QR scanning is now implemented with a dedicated MVI-friendly scanner route, CameraX + ML Kit integration, supported wallet-relevant barcode formats, and explicit permission/retry/error handling without auto-save.
 - Successful barcode / QR scans now open a confirmation editor that reuses the existing card-entry form with prefilled category context, code type, and code value before local persistence.
 - Scan barcode / QR coverage now includes chooser-route propagation tests, scanner state/effect tests, and confirmation-prefill tests on the shared editor ViewModel.
 - Scan barcode / QR coverage now also includes a repository-backed integration test for category-context preselection, generic-flow category validation, no-auto-save before confirmation, and persistence after the confirmation save step.
@@ -218,6 +219,9 @@ Maintenance rule: update this file after every major task.
 - MVP test hardening now also covers restore-time replacement of persisted search history, verifies that sync retry batches use the latest local state after an earlier failure, and fixes a timing-sensitive category-creation integration test so it waits for the actual Home state update instead of assuming immediate delivery.
 - Crash/stability hardening now also converts scan-photo, smart-scan, and Google Wallet import launcher/setup failures into their existing failed UI states instead of allowing camera, picker, or scanner startup exceptions to crash the route.
 - Performance hardening now moves ML Kit image loading/post-processing, fullscreen barcode bitmap generation, and backup/restore/export JSON-CSV serialization off the main thread, eliminating the most obvious ANR-class work from active user flows.
+- Scan barcode / QR startup is now hardened against infinite loading: the old one-shot scanner launch effect has been replaced with explicit permission, initializing, active, blocked, and failed states; missing permission now shows permission UI instead of a loader; initialization failures surface retry UI instead of hanging indefinitely.
+- Focused scan-barcode verification passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ScanBarcodeFlowIntegrationTest' :app:assembleDebug :app:assembleRelease`
 - UX hardening now resets photo-scan, smart-scan image, and Google Wallet image-import routes back to actionable idle state after a successful handoff into confirmation, so backing out of confirmation no longer returns the user to a stale processing spinner.
 - Manual Entry now applies IME-aware padding so the form stays scrollable and the save action remains accessible while the keyboard is open.
 - Data-integrity hardening now rejects any attempt to persist a real stored category with reserved Favorites semantics, including creating a custom category named `Favorites`, upserting a category flagged as favorites, or deleting the virtual Favorites id through the repository API.
@@ -275,7 +279,7 @@ Maintenance rule: update this file after every major task.
 - Custom category creation currently relies on a fixed palette and does not yet support editing after save.
 - Fullscreen code rendering falls back to plain text if bitmap generation fails for an unexpected code payload or format combination.
 - Manual Entry currently uses a typed `YYYY-MM-DD` expiration-date input rather than a date picker.
-- Scan barcode / QR currently depends on Google Code Scanner availability through Google Play services on the device.
+- Scan barcode / QR now depends on CameraX/ML Kit plus camera hardware availability; it is covered with JVM state tests, but there are still no instrumentation tests for real camera startup or live scanning on device.
 - Scan card photo uses conservative OCR heuristics for name and card-number hints, so partial extraction remains possible and user review is still required.
 - Smart scanning also depends on conservative inferred data and intentionally requires user confirmation instead of any automatic organization or category assignment.
 - Google Wallet import cannot read arbitrary Wallet items directly; it only supports the limited shared text/link and image cases surfaced in the current UI.

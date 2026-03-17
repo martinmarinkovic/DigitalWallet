@@ -20,17 +20,32 @@ object ScanBarcodeRoutes {
 enum class ScanBarcodeStatus(
     @param:StringRes val titleRes: Int,
     @param:StringRes val messageRes: Int,
-    val showRetryButton: Boolean
+    val showProgress: Boolean = false,
+    val showRetryButton: Boolean = false,
+    val showPermissionButton: Boolean = false,
+    val showOpenSettingsButton: Boolean = false,
+    val showScannerPreview: Boolean = false
 ) {
-    LAUNCHING(
+    INITIALIZING(
         titleRes = R.string.scan_barcode_launching_title,
         messageRes = R.string.scan_barcode_launching_message,
-        showRetryButton = false
+        showProgress = true,
+        showScannerPreview = true
     ),
-    CANCELLED(
-        titleRes = R.string.scan_barcode_cancelled_title,
-        messageRes = R.string.scan_barcode_cancelled_message,
-        showRetryButton = true
+    ACTIVE(
+        titleRes = R.string.scan_barcode_active_title,
+        messageRes = R.string.scan_barcode_active_message,
+        showScannerPreview = true
+    ),
+    PERMISSION_REQUIRED(
+        titleRes = R.string.scan_barcode_permission_required_title,
+        messageRes = R.string.scan_barcode_permission_required_message,
+        showPermissionButton = true
+    ),
+    PERMISSION_BLOCKED(
+        titleRes = R.string.scan_barcode_permission_blocked_title,
+        messageRes = R.string.scan_barcode_permission_blocked_message,
+        showOpenSettingsButton = true
     ),
     FAILED(
         titleRes = R.string.scan_barcode_failed_title,
@@ -40,30 +55,43 @@ enum class ScanBarcodeStatus(
 }
 
 data class ScanBarcodeUiState(
-    val status: ScanBarcodeStatus = ScanBarcodeStatus.LAUNCHING
+    val status: ScanBarcodeStatus = ScanBarcodeStatus.INITIALIZING
 )
 
 sealed interface ScanBarcodeEvent {
-    data object OnScreenOpened : ScanBarcodeEvent
-
     data object OnBackClicked : ScanBarcodeEvent
 
     data object OnRetryClicked : ScanBarcodeEvent
+
+    data object OnPermissionButtonClicked : ScanBarcodeEvent
+
+    data object OnOpenSettingsClicked : ScanBarcodeEvent
+
+    data class OnPermissionStateResolved(val granted: Boolean) : ScanBarcodeEvent
+
+    data class OnPermissionRequestResult(
+        val granted: Boolean,
+        val shouldShowRationale: Boolean
+    ) : ScanBarcodeEvent
+
+    data object OnScannerInitialized : ScanBarcodeEvent
+
+    data object OnScannerInitializationFailed : ScanBarcodeEvent
 
     data class OnScanSucceeded(
         val codeType: CardCodeType,
         val codeValue: String
     ) : ScanBarcodeEvent
 
-    data object OnScanCancelled : ScanBarcodeEvent
-
-    data object OnScanFailed : ScanBarcodeEvent
+    data object OnScanProcessingFailed : ScanBarcodeEvent
 }
 
 sealed interface ScanBarcodeEffect {
     data object NavigateBack : ScanBarcodeEffect
 
-    data object LaunchScanner : ScanBarcodeEffect
+    data object RequestCameraPermission : ScanBarcodeEffect
+
+    data object OpenAppSettings : ScanBarcodeEffect
 
     data class OpenConfirmation(val route: String) : ScanBarcodeEffect
 }
