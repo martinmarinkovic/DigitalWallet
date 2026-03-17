@@ -115,6 +115,9 @@ Maintenance rule: update this file after every major task.
 - Focused data-integrity verification now passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.data.transfer.OfflineFirstUserDataTransferRepositoryTest'`
   - `./gradlew :app:assembleDebug`
+- Focused permission/security verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.reminder.ExpirationReminderIntentsTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.app.ReminderLaunchViewModelTest'`
+  - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
 - Full MVP production-readiness review was completed and documented.
@@ -215,6 +218,7 @@ Maintenance rule: update this file after every major task.
 - Manual Entry now applies IME-aware padding so the form stays scrollable and the save action remains accessible while the keyboard is open.
 - Data-integrity hardening now rejects any attempt to persist a real stored category with reserved Favorites semantics, including creating a custom category named `Favorites`, upserting a category flagged as favorites, or deleting the virtual Favorites id through the repository API.
 - Legacy stored-Favorites migration coverage remains intact by seeding old invalid rows directly through DAO-level tests instead of through the now-guarded repository API.
+- Permission/security hardening now limits reminder-notification deep-link consumption to a dedicated in-app reminder action instead of trusting any exported launcher intent that happens to carry the card-id extra.
 
 ## 3. In Progress
 - No feature implementation is currently in progress.

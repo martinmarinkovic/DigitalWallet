@@ -97,6 +97,7 @@ class ExpirationReminderWorker(
 
     private fun createContentIntent(cardId: String): PendingIntent {
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            action = ExpirationReminderIntents.ACTION_OPEN_REMINDER_CARD
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(ExpirationReminderIntents.EXTRA_CARD_ID, cardId)
         }
