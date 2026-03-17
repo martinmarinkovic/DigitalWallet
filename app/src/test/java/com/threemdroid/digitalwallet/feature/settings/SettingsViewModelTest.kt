@@ -412,6 +412,25 @@ class SettingsViewModelTest {
         assertFalse(viewModel.uiState.value.hasSearchHistory)
     }
 
+    @Test
+    fun legalActions_emitNavigationEffects() = runTest {
+        val viewModel = SettingsViewModel(
+            settingsRepository = FakeSettingsRepository(),
+            searchHistoryRepository = FakeSearchHistoryRepository(),
+            userDataTransferRepository = FakeUserDataTransferRepository()
+        )
+
+        advanceUntilIdle()
+
+        val privacyEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(SettingsEvent.OnPrivacyPolicyClicked)
+        assertEquals(SettingsEffect.OpenPrivacyPolicy, privacyEffect.await())
+
+        val termsEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(SettingsEvent.OnTermsClicked)
+        assertEquals(SettingsEffect.OpenTerms, termsEffect.await())
+    }
+
     private class FakeSettingsRepository(
         appSettings: AppSettings = AppSettings()
     ) : SettingsRepository {

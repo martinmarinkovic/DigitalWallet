@@ -62,14 +62,22 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.flow.collectLatest
 
-fun NavGraphBuilder.settingsScreen() {
+fun NavGraphBuilder.settingsScreen(
+    onOpenPrivacyPolicy: () -> Unit,
+    onOpenTerms: () -> Unit
+) {
     composable(route = TopLevelDestination.SETTINGS.startRoute) {
-        SettingsRoute()
+        SettingsRoute(
+            onOpenPrivacyPolicy = onOpenPrivacyPolicy,
+            onOpenTerms = onOpenTerms
+        )
     }
 }
 
 @Composable
 private fun SettingsRoute(
+    onOpenPrivacyPolicy: () -> Unit,
+    onOpenTerms: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -130,6 +138,10 @@ private fun SettingsRoute(
                         message = context.getString(effect.messageRes)
                     )
                 }
+
+                SettingsEffect.OpenPrivacyPolicy -> onOpenPrivacyPolicy()
+
+                SettingsEffect.OpenTerms -> onOpenTerms()
 
                 is SettingsEffect.LaunchBackupDocument -> {
                     backupDocumentLauncher.launch(effect.suggestedFileName)
@@ -317,14 +329,6 @@ private fun SettingsScreen(
                     SettingsSectionCard(
                         title = stringResource(id = R.string.settings_section_app)
                     ) {
-                        SettingsActionRow(
-                            title = stringResource(id = R.string.settings_rate_app_title),
-                            onClick = { onEvent(SettingsEvent.OnRateAppClicked) }
-                        )
-                        SettingsActionRow(
-                            title = stringResource(id = R.string.settings_send_feedback_title),
-                            onClick = { onEvent(SettingsEvent.OnSendFeedbackClicked) }
-                        )
                         SettingsActionRow(
                             title = stringResource(id = R.string.settings_privacy_policy_title),
                             onClick = { onEvent(SettingsEvent.OnPrivacyPolicyClicked) }

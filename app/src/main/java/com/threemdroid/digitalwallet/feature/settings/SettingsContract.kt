@@ -72,10 +72,6 @@ sealed interface SettingsEvent {
 
     data object OnClearSearchHistoryClicked : SettingsEvent
 
-    data object OnRateAppClicked : SettingsEvent
-
-    data object OnSendFeedbackClicked : SettingsEvent
-
     data object OnPrivacyPolicyClicked : SettingsEvent
 
     data object OnTermsClicked : SettingsEvent
@@ -83,6 +79,10 @@ sealed interface SettingsEvent {
 
 sealed interface SettingsEffect {
     data class ShowMessage(val messageRes: Int) : SettingsEffect
+
+    data object OpenPrivacyPolicy : SettingsEffect
+
+    data object OpenTerms : SettingsEffect
 
     data object RequestNotificationPermission : SettingsEffect
 

@@ -108,8 +108,6 @@ Digital Wallet is a secondary wallet for everything except payment cards. Its pu
   - Export
   - Expiration reminders
   - Clear search history
-  - Rate app
-  - Send feedback
   - Privacy policy
   - Terms
   - App version

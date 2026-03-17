@@ -13,7 +13,10 @@ import com.threemdroid.digitalwallet.feature.carddetails.EditCardRoutes
 import com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenCodeRoutes
 import com.threemdroid.digitalwallet.feature.home.HomeRoutes
 import com.threemdroid.digitalwallet.feature.home.homeGraph
+import com.threemdroid.digitalwallet.feature.settings.SettingsLegalRoutes
+import com.threemdroid.digitalwallet.feature.settings.settingsPrivacyPolicyScreen
 import com.threemdroid.digitalwallet.feature.settings.settingsScreen
+import com.threemdroid.digitalwallet.feature.settings.settingsTermsScreen
 
 @Composable
 fun DigitalWalletNavHost(
@@ -86,7 +89,16 @@ fun DigitalWalletNavHost(
             startDestination = TopLevelDestination.SETTINGS.startRoute,
             route = TopLevelDestination.SETTINGS.graphRoute
         ) {
-            settingsScreen()
+            settingsScreen(
+                onOpenPrivacyPolicy = {
+                    navController.navigate(SettingsLegalRoutes.privacyPolicy)
+                },
+                onOpenTerms = {
+                    navController.navigate(SettingsLegalRoutes.terms)
+                }
+            )
+            settingsPrivacyPolicyScreen(onNavigateBack = navController::navigateUp)
+            settingsTermsScreen(onNavigateBack = navController::navigateUp)
         }
     }
 }

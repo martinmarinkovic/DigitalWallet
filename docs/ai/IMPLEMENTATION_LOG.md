@@ -106,6 +106,9 @@ Maintenance rule: update this file after every major task.
 - Full JVM verification still passes after the performance and ANR hardening updates:
   - `./gradlew :app:testDebugUnitTest`
   - `./gradlew :app:assembleDebug`
+- Focused Play Store compliance verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest'`
+  - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
 - Full MVP production-readiness review was completed and documented.
@@ -122,6 +125,7 @@ Maintenance rule: update this file after every major task.
 - Backup/restore compatibility coverage now includes old stored-Favorites payloads being normalized back into the new virtual-Favorites model.
 - Bottom navigation visibility is now route-aware in the app shell, with deep flows and Fullscreen Code no longer rendering the bottom bar.
 - Room migration hygiene was improved by enabling schema export in the database annotation, wiring the schema directory through KSP, and exposing that directory to `androidTest` assets for future migration tests.
+- Play Store compliance hardening removed placeholder Settings actions, added real in-app Privacy Policy and Terms screens, and disabled implicit Android backup/device-transfer paths so the app now relies only on its explicit manual backup/restore/export flows.
 - Project structure and Gradle setup were inspected.
 - AI memory documentation was introduced under `docs/ai`.
 - `PROJECT_MEMORY.md` was rewritten as the current product and implementation source of truth.
@@ -208,7 +212,6 @@ Maintenance rule: update this file after every major task.
 
 ## 4. Pending Tasks
 - Remove `Cloud Sync` from shipped MVP release behavior and UI, or hide it behind deferred V1.1 scope until a real backend-connected sync implementation exists.
-- Replace Privacy Policy and Terms placeholders with real release-ready destinations.
 - Implement category editing flows.
 - Implement category editing and deeper card context actions inside Category Details.
 
@@ -256,7 +259,6 @@ Maintenance rule: update this file after every major task.
 - Google Wallet import cannot read arbitrary Wallet items directly; it only supports the limited shared text/link and image cases surfaced in the current UI.
 - Home category reorder currently supports drag within the visible grid; auto-scroll during drag has not been implemented yet.
 - Category Details card reorder currently supports drag within the visible grid; auto-scroll during drag has not been implemented yet.
-- Privacy Policy and Terms are still placeholders in the current code and must be replaced before release.
 
 ## 7. Changed Files
 - `docs/ai/IMPLEMENTATION_LOG.md`

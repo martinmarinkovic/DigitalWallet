@@ -114,13 +114,17 @@ class SettingsViewModel @Inject constructor(
 
             SettingsEvent.OnClearSearchHistoryClicked -> clearSearchHistory()
 
-            SettingsEvent.OnRateAppClicked -> emitPlaceholderMessage(R.string.settings_rate_app_unavailable_message)
+            SettingsEvent.OnPrivacyPolicyClicked -> {
+                viewModelScope.launch {
+                    mutableEffects.emit(SettingsEffect.OpenPrivacyPolicy)
+                }
+            }
 
-            SettingsEvent.OnSendFeedbackClicked -> emitPlaceholderMessage(R.string.settings_send_feedback_unavailable_message)
-
-            SettingsEvent.OnPrivacyPolicyClicked -> emitPlaceholderMessage(R.string.settings_privacy_policy_unavailable_message)
-
-            SettingsEvent.OnTermsClicked -> emitPlaceholderMessage(R.string.settings_terms_unavailable_message)
+            SettingsEvent.OnTermsClicked -> {
+                viewModelScope.launch {
+                    mutableEffects.emit(SettingsEffect.OpenTerms)
+                }
+            }
         }
     }
 
@@ -178,12 +182,6 @@ class SettingsViewModel @Inject constructor(
                     SettingsEffect.ShowMessage(R.string.settings_action_failed_message)
                 )
             }
-        }
-    }
-
-    private fun emitPlaceholderMessage(messageRes: Int) {
-        viewModelScope.launch {
-            mutableEffects.emit(SettingsEffect.ShowMessage(messageRes))
         }
     }
 
