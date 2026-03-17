@@ -103,6 +103,9 @@ Maintenance rule: update this file after every major task.
 - Full JVM regression verification still passes after the latest crash-hardening updates:
   - `./gradlew :app:testDebugUnitTest`
   - `./gradlew :app:assembleDebug`
+- Full JVM verification still passes after the performance and ANR hardening updates:
+  - `./gradlew :app:testDebugUnitTest`
+  - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
 - Full MVP production-readiness review was completed and documented.
@@ -197,6 +200,7 @@ Maintenance rule: update this file after every major task.
 - Home search result handling is now consistent with the implemented quick-access flow: tapping a card match opens Card Details directly instead of routing through the parent category.
 - MVP test hardening now also covers restore-time replacement of persisted search history, verifies that sync retry batches use the latest local state after an earlier failure, and fixes a timing-sensitive category-creation integration test so it waits for the actual Home state update instead of assuming immediate delivery.
 - Crash/stability hardening now also converts scan-photo, smart-scan, and Google Wallet import launcher/setup failures into their existing failed UI states instead of allowing camera, picker, or scanner startup exceptions to crash the route.
+- Performance hardening now moves ML Kit image loading/post-processing, fullscreen barcode bitmap generation, and backup/restore/export JSON-CSV serialization off the main thread, eliminating the most obvious ANR-class work from active user flows.
 
 ## 3. In Progress
 - No feature implementation is currently in progress.

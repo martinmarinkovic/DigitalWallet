@@ -6,24 +6,28 @@ import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import com.threemdroid.digitalwallet.core.model.CardCodeType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class FullscreenCodeBitmapRenderer {
-    fun render(
+    suspend fun render(
         codeValue: String,
         codeType: CardCodeType,
         width: Int,
         height: Int
     ): Bitmap? =
-        runCatching {
-            val bitMatrix = MultiFormatWriter().encode(
-                codeValue,
-                codeType.toBarcodeFormat(),
-                width,
-                height,
-                mapOf(EncodeHintType.MARGIN to 1)
-            )
-            bitMatrix.toBitmap()
-        }.getOrNull()
+        withContext(Dispatchers.Default) {
+            runCatching {
+                val bitMatrix = MultiFormatWriter().encode(
+                    codeValue,
+                    codeType.toBarcodeFormat(),
+                    width,
+                    height,
+                    mapOf(EncodeHintType.MARGIN to 1)
+                )
+                bitMatrix.toBitmap()
+            }.getOrNull()
+        }
 }
 
 internal fun CardCodeType.toFullscreenPresentation(): FullscreenCodePresentation =
@@ -59,14 +63,13 @@ private fun CardCodeType.toBarcodeFormat(): BarcodeFormat =
 
 private fun BitMatrix.toBitmap(): Bitmap {
     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-    for (x in 0 until width) {
-        for (y in 0 until height) {
-            bitmap.setPixel(
-                x,
-                y,
+    val pixels = IntArray(width * height)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            pixels[(y * width) + x] =
                 if (this[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-            )
         }
     }
+    bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
     return bitmap
 }

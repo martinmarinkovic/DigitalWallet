@@ -18,6 +18,8 @@ import com.threemdroid.digitalwallet.data.sync.SyncMutationRecorder
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Singleton
 class OfflineFirstUserDataTransferRepository @Inject constructor(
@@ -47,9 +49,13 @@ class OfflineFirstUserDataTransferRepository @Inject constructor(
             )
         }
 
+        val encodedSnapshot = withContext(Dispatchers.Default) {
+            backupJsonCodec.encode(snapshot)
+        }
+
         documentStore.writeText(
             uri = uri,
-            text = backupJsonCodec.encode(snapshot)
+            text = encodedSnapshot
         )
 
         return BackupResult(
@@ -60,7 +66,9 @@ class OfflineFirstUserDataTransferRepository @Inject constructor(
     }
 
     override suspend fun prepareRestore(uri: Uri): PreparedRestoreData {
-        val snapshot = backupJsonCodec.decode(documentStore.readText(uri))
+        val snapshot = withContext(Dispatchers.Default) {
+            backupJsonCodec.decode(documentStore.readText(uri))
+        }
         return PreparedRestoreData(
             preview = RestorePreview(
                 exportedAt = snapshot.exportedAt,
@@ -135,12 +143,16 @@ class OfflineFirstUserDataTransferRepository @Inject constructor(
             categoryDao.getCategories().map { category -> category.asExternalModel() } to
                 cardDao.getAllCards().map { card -> card.asExternalModel() }
         }
-        documentStore.writeText(
-            uri = uri,
-            text = cardCsvExportFormatter.format(
+        val exportedCards = withContext(Dispatchers.Default) {
+            cardCsvExportFormatter.format(
                 categories = categories,
                 cards = cards
             )
+        }
+
+        documentStore.writeText(
+            uri = uri,
+            text = exportedCards
         )
 
         return ExportCardsResult(cardCount = cards.size)

@@ -3,6 +3,7 @@ package com.threemdroid.digitalwallet.feature.fullscreencode
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -242,17 +244,22 @@ private fun FullscreenCodeBitmap(
         }
         val widthPx = with(density) { widthDp.roundToPx() }.coerceAtLeast(1)
         val heightPx = with(density) { heightDp.roundToPx() }.coerceAtLeast(1)
-        val bitmap = remember(
+        val renderState by produceState(
+            initialValue = FullscreenCodeRenderState(),
             uiState.codeValue,
             uiState.codeType,
             widthPx,
-            heightPx
+            heightPx,
+            renderer
         ) {
-            renderer.render(
-                codeValue = uiState.codeValue,
-                codeType = uiState.codeType,
-                width = widthPx,
-                height = heightPx
+            value = FullscreenCodeRenderState(
+                bitmap = renderer.render(
+                    codeValue = uiState.codeValue,
+                    codeType = uiState.codeType,
+                    width = widthPx,
+                    height = heightPx
+                ),
+                isLoaded = true
             )
         }
 
@@ -260,34 +267,55 @@ private fun FullscreenCodeBitmap(
             color = Color.White,
             shape = RoundedCornerShape(24.dp)
         ) {
-            if (bitmap != null) {
-                androidx.compose.foundation.Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(widthDp, heightDp)
-                        .padding(18.dp)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(widthDp, heightDp)
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = uiState.codeValue,
-                        color = Color.Black,
-                        fontFamily = FontFamily.Monospace,
-                        textAlign = TextAlign.Center,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis
+            when {
+                !renderState.isLoaded -> {
+                    Box(
+                        modifier = Modifier
+                            .size(widthDp, heightDp)
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.Black)
+                    }
+                }
+
+                renderState.bitmap != null -> {
+                    val bitmap = renderState.bitmap
+                    androidx.compose.foundation.Image(
+                        bitmap = checkNotNull(bitmap).asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(widthDp, heightDp)
+                            .padding(18.dp)
                     )
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .size(widthDp, heightDp)
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = uiState.codeValue,
+                            color = Color.Black,
+                            fontFamily = FontFamily.Monospace,
+                            textAlign = TextAlign.Center,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+private data class FullscreenCodeRenderState(
+    val bitmap: Bitmap? = null,
+    val isLoaded: Boolean = false
+)
 
 @Composable
 private fun FullscreenCodeStatusState(

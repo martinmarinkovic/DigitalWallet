@@ -15,7 +15,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 interface PhotoScanExtractor {
     suspend fun extractDetails(imageUri: Uri): PhotoScanExtractionResult
@@ -55,24 +57,30 @@ class MlKitPhotoScanExtractor @Inject constructor(
     }
 
     override suspend fun extractDetails(imageUri: Uri): PhotoScanExtractionResult {
-        val barcodes = barcodeScanner.process(InputImage.fromFilePath(context, imageUri)).awaitResult()
-        val recognizedText = textRecognizer.process(InputImage.fromFilePath(context, imageUri)).awaitResult()
-        val primaryBarcode = barcodes.firstOrNull { barcode ->
-            !barcode.rawValue.isNullOrBlank() || !barcode.displayValue.isNullOrBlank()
+        val inputImage = withContext(Dispatchers.IO) {
+            InputImage.fromFilePath(context, imageUri)
         }
-        val codeValue = primaryBarcode?.rawValue
-            ?.trim()
-            ?.takeIf { value -> value.isNotBlank() }
-            ?: primaryBarcode?.displayValue
+        val barcodes = barcodeScanner.process(inputImage).awaitResult()
+        val recognizedText = textRecognizer.process(inputImage).awaitResult()
+
+        return withContext(Dispatchers.Default) {
+            val primaryBarcode = barcodes.firstOrNull { barcode ->
+                !barcode.rawValue.isNullOrBlank() || !barcode.displayValue.isNullOrBlank()
+            }
+            val codeValue = primaryBarcode?.rawValue
                 ?.trim()
                 ?.takeIf { value -> value.isNotBlank() }
+                ?: primaryBarcode?.displayValue
+                    ?.trim()
+                    ?.takeIf { value -> value.isNotBlank() }
 
-        return PhotoScanExtractionResult(
-            codeType = primaryBarcode?.format.toCardCodeType(),
-            codeValue = codeValue,
-            cardNumber = recognizedText.extractCardNumber(),
-            cardName = recognizedText.extractCardName()
-        )
+            PhotoScanExtractionResult(
+                codeType = primaryBarcode?.format.toCardCodeType(),
+                codeValue = codeValue,
+                cardNumber = recognizedText.extractCardNumber(),
+                cardName = recognizedText.extractCardName()
+            )
+        }
     }
 }
 
