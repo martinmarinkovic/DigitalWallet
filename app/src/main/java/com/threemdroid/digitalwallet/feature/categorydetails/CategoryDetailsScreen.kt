@@ -1,7 +1,6 @@
 package com.threemdroid.digitalwallet.feature.categorydetails
-
-import android.graphics.Color.parseColor
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,7 +47,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -282,12 +279,12 @@ private fun CategoryCardsGrid(
     var draggedItemOffset by remember { mutableStateOf(Offset.Zero) }
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
+        columns = GridCells.Fixed(1),
         state = gridState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         items(
             items = cards,
@@ -365,76 +362,67 @@ private fun CategoryCardItem(
     isBeingDragged: Boolean,
     onClick: () -> Unit
 ) {
-    val accentColor = card.colorHex.toComposeColor()
-
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(0.9f)
             .clickable(
                 enabled = enabled,
                 onClick = onClick
             ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White
+        ),
+        border = if (isBeingDragged) {
+            BorderStroke(
+                width = 2.dp,
+                color = Color.White.copy(alpha = 0.54f)
+            )
+        } else {
+            null
+        },
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isBeingDragged) 12.dp else 1.dp
+            defaultElevation = 0.dp
         )
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .fillMaxWidth()
+                .height(144.dp)
+                .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
-            Box(
+            Text(
+                text = card.name,
                 modifier = Modifier
-                    .height(72.dp)
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.large)
-                    .background(accentColor.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = card.placeholderLabel,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = accentColor,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+                    .align(Alignment.Center)
+                    .padding(horizontal = 20.dp),
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = card.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                CategoryCardTag(
+                    text = card.codeTypeLabel,
+                    backgroundColor = Color.White.copy(alpha = 0.16f),
+                    contentColor = Color.White
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                card.expirationBadge?.let { badge ->
                     CategoryCardTag(
-                        text = card.codeTypeLabel,
-                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = badge.text(),
+                        backgroundColor = Color.White.copy(
+                            alpha = if (badge.isCritical()) 0.24f else 0.16f
+                        ),
+                        contentColor = Color.White
                     )
-                    card.expirationBadge?.let { badge ->
-                        CategoryCardTag(
-                            text = badge.text(),
-                            backgroundColor = if (badge.isCritical()) {
-                                MaterialTheme.colorScheme.errorContainer
-                            } else {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            },
-                            contentColor = if (badge.isCritical()) {
-                                MaterialTheme.colorScheme.onErrorContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            }
-                        )
-                    }
                 }
             }
         }
@@ -508,11 +496,6 @@ private fun CategoryDetailsStatusState(
         }
     }
 }
-
-private fun String.toComposeColor(): Color =
-    runCatching {
-        Color(parseColor(this))
-    }.getOrDefault(Color(0xFF64748B))
 
 @Composable
 private fun CategoryDetailsExpirationBadgeUiModel.text(): String =

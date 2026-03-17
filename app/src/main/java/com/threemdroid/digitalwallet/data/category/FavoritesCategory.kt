@@ -10,7 +10,7 @@ internal object FavoritesCategory {
     const val legacyDefaultId = "default_favorites"
 
     private const val name = "Favorites"
-    private const val colorHex = "#F59E0B"
+    private const val colorHex = "#F97316"
     private val timestamp: Instant = Instant.EPOCH
 
     fun isVirtual(categoryId: String): Boolean = categoryId == id

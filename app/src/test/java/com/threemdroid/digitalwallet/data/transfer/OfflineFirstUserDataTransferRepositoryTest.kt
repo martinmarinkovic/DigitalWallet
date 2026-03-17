@@ -263,7 +263,7 @@ class OfflineFirstUserDataTransferRepositoryTest : BaseRepositoryTest() {
                     id = "default_shopping_loyalty",
                     name = "Shopping & Loyalty",
                     position = 0,
-                    color = "#2563EB",
+                    color = "#DC2626",
                     isDefault = true
                 ),
                 category(
@@ -277,21 +277,21 @@ class OfflineFirstUserDataTransferRepositoryTest : BaseRepositoryTest() {
                     id = "default_transport",
                     name = "Transport",
                     position = 2,
-                    color = "#0891B2",
+                    color = "#0F766E",
                     isDefault = true
                 ),
                 category(
                     id = "default_tickets",
                     name = "Tickets",
                     position = 3,
-                    color = "#DC2626",
+                    color = "#2563EB",
                     isDefault = true
                 ),
                 category(
                     id = "default_vouchers",
                     name = "Vouchers",
                     position = 4,
-                    color = "#F97316",
+                    color = "#475569",
                     isDefault = true
                 ),
                 category(
@@ -305,14 +305,14 @@ class OfflineFirstUserDataTransferRepositoryTest : BaseRepositoryTest() {
                     id = "default_library",
                     name = "Library",
                     position = 6,
-                    color = "#4F46E5",
+                    color = "#EC4899",
                     isDefault = true
                 ),
                 category(
                     id = "default_other",
                     name = "Other",
                     position = 7,
-                    color = "#475569",
+                    color = "#92400E",
                     isDefault = true
                 ),
                 category(

@@ -1,18 +1,20 @@
 package com.threemdroid.digitalwallet.feature.carddetails
 
-import android.graphics.Color.parseColor
-import androidx.compose.foundation.background
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,38 +23,49 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
+import com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenBrightnessManager
+import com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenCodeBitmapRenderer
+import com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenCodePresentation
+import com.threemdroid.digitalwallet.feature.fullscreencode.NoOpBrightnessController
+import com.threemdroid.digitalwallet.feature.fullscreencode.WindowBrightnessController
+import com.threemdroid.digitalwallet.feature.fullscreencode.toFullscreenPresentation
 import kotlinx.coroutines.flow.collectLatest
 
 object CardDetailsRoutes {
@@ -87,6 +100,13 @@ fun CardDetailsRoute(
     viewModel: CardDetailsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+    val brightnessManager = remember(activity) {
+        FullscreenBrightnessManager(
+            activity?.window?.let(::WindowBrightnessController) ?: NoOpBrightnessController()
+        )
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collectLatest { effect ->
@@ -95,6 +115,18 @@ fun CardDetailsRoute(
                 is CardDetailsEffect.OpenEdit -> onOpenEdit(effect.cardId)
                 is CardDetailsEffect.OpenFullscreenCode -> onOpenFullscreenCode(effect.cardId)
             }
+        }
+    }
+
+    DisposableEffect(uiState.isContentVisible, brightnessManager) {
+        if (uiState.isContentVisible) {
+            brightnessManager.onVisible(shouldMaximizeBrightness = true)
+        } else {
+            brightnessManager.onHidden()
+        }
+
+        onDispose {
+            brightnessManager.onHidden()
         }
     }
 
@@ -111,6 +143,7 @@ private fun CardDetailsScreen(
     onEvent: (CardDetailsEvent) -> Unit
 ) {
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -158,7 +191,13 @@ private fun CardDetailsScreen(
                             )
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { innerPadding ->
@@ -225,7 +264,7 @@ private fun CardDetailsContent(
     uiState: CardDetailsUiState,
     onEvent: (CardDetailsEvent) -> Unit
 ) {
-    val accentColor = uiState.categoryColorHex.toComposeColor()
+    val presentation = uiState.codeType.toFullscreenPresentation()
 
     Column(
         modifier = modifier
@@ -233,248 +272,200 @@ private fun CardDetailsContent(
             .padding(horizontal = 16.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (uiState.isActionErrorVisible) {
-            Surface(
-                color = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(
-                    text = stringResource(id = R.string.card_details_action_error_message),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth()
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceVariant
         ) {
             Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CategoryPill(
-                        categoryName = uiState.categoryName.ifBlank {
-                            stringResource(id = R.string.card_details_unknown_category)
-                        },
-                        accentColor = accentColor
-                    )
-                    FavoritePill(isFavorite = uiState.isFavorite)
-                }
-
-                Text(
-                    text = stringResource(id = R.string.card_details_code_preview_title),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = accentColor.copy(alpha = 0.12f),
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = uiState.codeTypeLabel,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-
-                        SelectionContainer {
-                            Text(
-                                text = uiState.codeValue,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
-
-                FilledTonalButton(
-                    onClick = { onEvent(CardDetailsEvent.OnOpenFullscreenCodeClicked) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.OpenInFull,
-                        contentDescription = null
-                    )
-                    Text(
-                        text = stringResource(id = R.string.card_details_open_fullscreen_code),
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-            }
-        }
-
-        DetailsCard(
-            title = stringResource(id = R.string.card_details_information_title),
-            details = listOfNotNull(
-                CardDetailItemUiModel(
+                CardDetailsValueBlock(
                     label = stringResource(id = R.string.card_details_category_label),
+                    modifier = Modifier.fillMaxWidth(),
                     value = uiState.categoryName.ifBlank {
                         stringResource(id = R.string.card_details_unknown_category)
                     }
-                ),
-                uiState.cardNumber?.let { value ->
-                    CardDetailItemUiModel(
-                        label = stringResource(id = R.string.card_details_card_number_label),
-                        value = value
-                    )
-                },
-                uiState.expirationDate?.let { value ->
-                    CardDetailItemUiModel(
-                        label = stringResource(id = R.string.card_details_expiration_date_label),
-                        value = value
-                    )
-                },
-                uiState.notes?.let { value ->
-                    CardDetailItemUiModel(
-                        label = stringResource(id = R.string.card_details_notes_label),
-                        value = value
-                    )
-                }
-            )
-        )
+                )
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("card_details_actions")
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { onEvent(CardDetailsEvent.OnEditClicked) },
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = null
-                    )
-                    Text(
-                        text = stringResource(id = R.string.card_details_edit),
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
+                CardDetailsCodeBitmap(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp),
+                    codeValue = uiState.codeValue,
+                    codeType = uiState.codeType,
+                    presentation = presentation
+                )
 
-                TextButton(
-                    onClick = { onEvent(CardDetailsEvent.OnDeleteClicked) },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isDeleteInProgress
+                CardDetailsValueBlock(
+                    label = stringResource(id = R.string.manual_entry_code_type_label),
+                    value = uiState.codeTypeLabel,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp)
+                )
+
+                CardDetailsValueBlock(
+                    label = stringResource(id = R.string.manual_entry_code_value_label),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Text(
-                        text = stringResource(id = R.string.card_details_delete),
-                        modifier = Modifier.padding(start = 8.dp),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    SelectionContainer {
+                        Text(
+                            text = uiState.codeValue,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun CategoryPill(
-    categoryName: String,
-    accentColor: Color
-) {
-    Surface(
-        color = accentColor.copy(alpha = 0.12f),
-        contentColor = accentColor,
-        shape = MaterialTheme.shapes.small
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        if (uiState.isActionErrorVisible) {
+            Text(
+                text = stringResource(id = R.string.card_details_action_error_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+
+        Button(
+            onClick = { onEvent(CardDetailsEvent.OnDeleteClicked) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isDeleteInProgress,
+            shape = MaterialTheme.shapes.large,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
+            )
         ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(accentColor, CircleShape)
+            Icon(
+                imageVector = Icons.Filled.Delete,
+                contentDescription = null
             )
             Text(
-                text = categoryName,
-                style = MaterialTheme.typography.labelLarge
+                text = stringResource(id = R.string.card_details_delete),
+                modifier = Modifier.padding(start = 8.dp),
+                color = Color.White
             )
         }
     }
 }
 
 @Composable
-private fun FavoritePill(isFavorite: Boolean) {
-    Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shape = MaterialTheme.shapes.small
+private fun CardDetailsValueBlock(
+    label: String,
+    value: String? = null,
+    modifier: Modifier = Modifier,
+    content: (@Composable () -> Unit)? = null
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text = if (isFavorite) {
-                stringResource(id = R.string.card_details_favorite_on)
-            } else {
-                stringResource(id = R.string.card_details_favorite_off)
-            },
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.labelLarge
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (content != null) {
+            content()
+        } else if (value != null) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
     }
 }
 
-private data class CardDetailItemUiModel(
-    val label: String,
-    val value: String
-)
-
 @Composable
-private fun DetailsCard(
-    title: String,
-    details: List<CardDetailItemUiModel>
+private fun CardDetailsCodeBitmap(
+    modifier: Modifier = Modifier,
+    codeValue: String,
+    codeType: com.threemdroid.digitalwallet.core.model.CardCodeType,
+    presentation: FullscreenCodePresentation,
+    renderer: FullscreenCodeBitmapRenderer = remember { FullscreenCodeBitmapRenderer() }
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        val density = LocalDensity.current
+        val widthDp = if (presentation == FullscreenCodePresentation.MATRIX) {
+            maxWidth.coerceAtMost(280.dp)
+        } else {
+            maxWidth.coerceAtMost(420.dp)
+        }
+        val heightDp = if (presentation == FullscreenCodePresentation.MATRIX) {
+            widthDp
+        } else {
+            widthDp * 0.42f
+        }
+        val widthPx = with(density) { widthDp.toPx().toInt() }
+        val heightPx = with(density) { heightDp.toPx().toInt() }
+        val renderState by produceState(
+            initialValue = CardDetailsCodeRenderState(),
+            codeValue,
+            codeType,
+            widthPx,
+            heightPx,
+            renderer
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+            value = CardDetailsCodeRenderState(
+                bitmap = renderer.render(
+                    codeValue = codeValue,
+                    codeType = codeType,
+                    width = widthPx.coerceAtLeast(1),
+                    height = heightPx.coerceAtLeast(1)
+                ),
+                isLoaded = true
             )
-            details.forEach { detail ->
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = detail.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        }
+
+        Surface(
+            color = Color.White,
+            shape = MaterialTheme.shapes.large
+        ) {
+            when {
+                !renderState.isLoaded -> {
+                    Box(
+                        modifier = Modifier
+                            .size(widthDp, heightDp)
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.Black)
+                    }
+                }
+
+                renderState.bitmap != null -> {
+                    Image(
+                        bitmap = checkNotNull(renderState.bitmap).asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(widthDp, heightDp)
+                            .padding(18.dp)
                     )
-                    SelectionContainer {
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .size(widthDp, heightDp)
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = detail.value,
-                            style = MaterialTheme.typography.bodyLarge
+                            text = codeValue,
+                            color = Color.Black,
+                            fontFamily = FontFamily.Monospace,
+                            textAlign = TextAlign.Center,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -482,6 +473,11 @@ private fun DetailsCard(
         }
     }
 }
+
+private data class CardDetailsCodeRenderState(
+    val bitmap: Bitmap? = null,
+    val isLoaded: Boolean = false
+)
 
 @Composable
 private fun CardDetailsStatusState(
@@ -508,7 +504,9 @@ private fun CardDetailsStatusState(
     }
 }
 
-private fun String.toComposeColor(): Color =
-    runCatching {
-        Color(parseColor(this))
-    }.getOrDefault(Color(0xFF64748B))
+private fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }

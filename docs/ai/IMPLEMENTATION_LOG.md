@@ -4,6 +4,8 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Add Card background / shared form interaction / default-category palette fixes applied and validated on March 17, 2026.
+- Category-card / Card Details / shared add-edit form UI polish applied and validated on March 17, 2026.
 - Add Card live-scan background/button styling update applied and validated on March 17, 2026.
 - Add Card live-scan UI refinement update applied and validated on March 17, 2026.
 - Add Card default-entry flow update applied and validated on March 17, 2026.
@@ -34,6 +36,11 @@ Maintenance rule: update this file after every major task.
 - Docs-only release-triage update applied on March 16, 2026; no application code changed in this task.
 - Last known build/test status remains the previously verified green state.
 - `./gradlew :app:assembleDebug` completes successfully.
+- Focused add-card/form/default-category verification now passes:
+  - `./gradlew :app:assembleDebug :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryViewModelTest' --tests 'com.threemdroid.digitalwallet.data.transfer.OfflineFirstUserDataTransferRepositoryTest'`
+- Focused category/card-details/form UI verification now passes:
+  - `./gradlew :app:assembleDebug`
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest'`
 - Focused cloud sync foundation verification passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.sync.*'`
   - `./gradlew :app:assembleDebug`

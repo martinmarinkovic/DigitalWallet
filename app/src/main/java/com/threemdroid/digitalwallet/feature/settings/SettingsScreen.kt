@@ -58,6 +58,7 @@ import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.ReminderTiming
 import com.threemdroid.digitalwallet.core.model.ThemeMode
 import com.threemdroid.digitalwallet.core.navigation.TopLevelDestination
+import com.threemdroid.digitalwallet.ui.theme.walletSwitchColors
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -406,7 +407,8 @@ private fun SettingsSwitchRow(
     ) {
         Switch(
             checked = checked,
-            onCheckedChange = null
+            onCheckedChange = null,
+            colors = walletSwitchColors()
         )
     }
 }

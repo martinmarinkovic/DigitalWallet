@@ -316,14 +316,14 @@ class CategoryRepositoryTest : BaseRepositoryTest() {
         )
 
         val expectedPersistedDefaultCategoryColors = listOf(
-            "#2563EB",
-            "#A855F7",
-            "#0891B2",
             "#DC2626",
-            "#F97316",
+            "#A855F7",
+            "#0F766E",
+            "#2563EB",
+            "#475569",
             "#16A34A",
-            "#4F46E5",
-            "#475569"
+            "#EC4899",
+            "#92400E"
         )
     }
 }

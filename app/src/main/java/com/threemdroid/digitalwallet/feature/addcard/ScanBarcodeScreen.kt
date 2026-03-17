@@ -197,6 +197,7 @@ private fun ScanBarcodeScreen(
         }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             if (showBackButton) {
                 CenterAlignedTopAppBar(

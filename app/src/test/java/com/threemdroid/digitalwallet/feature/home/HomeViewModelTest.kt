@@ -650,15 +650,15 @@ class HomeViewModelTest {
         fun defaultCategoriesWithCounts(
             overrides: Map<String, Int> = emptyMap()
         ): List<CategoryWithCardCount> = listOf(
-            categoryWithCount(FavoritesCategory.id, "Favorites", 0, "#F59E0B", overrides[FavoritesCategory.id] ?: 0, true, true),
-            categoryWithCount("default_shopping_loyalty", "Shopping & Loyalty", 1, "#2563EB", overrides["default_shopping_loyalty"] ?: 0, true, false),
+            categoryWithCount(FavoritesCategory.id, "Favorites", 0, "#F97316", overrides[FavoritesCategory.id] ?: 0, true, true),
+            categoryWithCount("default_shopping_loyalty", "Shopping & Loyalty", 1, "#DC2626", overrides["default_shopping_loyalty"] ?: 0, true, false),
             categoryWithCount("default_membership", "Membership", 2, "#A855F7", overrides["default_membership"] ?: 0, true, false),
-            categoryWithCount("default_transport", "Transport", 3, "#0891B2", overrides["default_transport"] ?: 0, true, false),
-            categoryWithCount("default_tickets", "Tickets", 4, "#DC2626", overrides["default_tickets"] ?: 0, true, false),
-            categoryWithCount("default_vouchers", "Vouchers", 5, "#F97316", overrides["default_vouchers"] ?: 0, true, false),
+            categoryWithCount("default_transport", "Transport", 3, "#0F766E", overrides["default_transport"] ?: 0, true, false),
+            categoryWithCount("default_tickets", "Tickets", 4, "#2563EB", overrides["default_tickets"] ?: 0, true, false),
+            categoryWithCount("default_vouchers", "Vouchers", 5, "#475569", overrides["default_vouchers"] ?: 0, true, false),
             categoryWithCount("default_access", "Access", 6, "#16A34A", overrides["default_access"] ?: 0, true, false),
-            categoryWithCount("default_library", "Library", 7, "#4F46E5", overrides["default_library"] ?: 0, true, false),
-            categoryWithCount("default_other", "Other", 8, "#475569", overrides["default_other"] ?: 0, true, false)
+            categoryWithCount("default_library", "Library", 7, "#EC4899", overrides["default_library"] ?: 0, true, false),
+            categoryWithCount("default_other", "Other", 8, "#92400E", overrides["default_other"] ?: 0, true, false)
         )
 
         fun categoryWithCount(

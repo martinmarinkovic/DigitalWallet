@@ -1,6 +1,9 @@
 package com.threemdroid.digitalwallet.feature.addcard
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -8,36 +11,42 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,9 +58,15 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.model.CardCodeType
 import com.threemdroid.digitalwallet.feature.carddetails.EditCardRoutes
+import com.threemdroid.digitalwallet.ui.theme.walletSwitchColors
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.collectLatest
-import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 fun NavGraphBuilder.manualEntryScreen(
     onNavigateBack: () -> Unit,
@@ -89,8 +104,7 @@ fun NavGraphBuilder.manualEntryScreen(
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
-            }
-            ,
+            },
             navArgument(ManualEntryRoutes.notesArg) {
                 type = NavType.StringType
                 nullable = true
@@ -146,201 +160,220 @@ fun ManualEntryRoute(
     )
 }
 
+private enum class ManualEntrySelectionSheet {
+    CATEGORY,
+    CODE_TYPE
+}
+
+private data class ManualEntrySelectionOption(
+    val id: String,
+    val label: String
+)
+
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ManualEntryScreen(
     uiState: ManualEntryUiState,
     onEvent: (ManualEntryEvent) -> Unit
 ) {
-    val usesConfirmationKeyboardLayout = uiState.usesConfirmationKeyboardLayout()
+    var activeSheet by rememberSaveable { mutableStateOf<ManualEntrySelectionSheet?>(null) }
+    var isDatePickerVisible by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
+            androidx.compose.material3.CenterAlignedTopAppBar(
                 title = {
-                    Text(text = stringResource(id = uiState.titleRes))
+                    Text(text = androidx.compose.ui.res.stringResource(id = uiState.titleRes))
                 },
                 navigationIcon = {
                     IconButton(onClick = { onEvent(ManualEntryEvent.OnBackClicked) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.navigate_back)
+                            contentDescription = androidx.compose.ui.res.stringResource(
+                                id = R.string.navigate_back
+                            )
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { innerPadding ->
+        when {
+            uiState.isLoading -> {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+
+            uiState.isCardMissing -> {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = androidx.compose.ui.res.stringResource(
+                                id = R.string.card_details_missing_title
+                            ),
+                            style = MaterialTheme.typography.headlineSmall,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = androidx.compose.ui.res.stringResource(
+                                id = R.string.card_details_missing_message
+                            ),
+                            modifier = Modifier.padding(top = 10.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
-            )
-        },
-        bottomBar = if (!uiState.isLoading && !uiState.isCardMissing && !usesConfirmationKeyboardLayout) {
-            {
+            }
+
+            else -> {
                 Surface(
-                    modifier = Modifier.imePadding(),
-                    shadowElevation = 6.dp
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier
+                            .fillMaxSize()
                     ) {
-                        if (uiState.isSaveErrorVisible) {
-                            Text(
-                                text = stringResource(id = R.string.manual_entry_save_error_message),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            ManualEntryFormFields(
+                                uiState = uiState,
+                                onEvent = onEvent,
+                                onOpenCategorySheet = {
+                                    activeSheet = ManualEntrySelectionSheet.CATEGORY
+                                },
+                                onOpenCodeTypeSheet = {
+                                    activeSheet = ManualEntrySelectionSheet.CODE_TYPE
+                                },
+                                onOpenDatePicker = {
+                                    isDatePickerVisible = true
+                                }
                             )
                         }
-                        Button(
-                            onClick = { onEvent(ManualEntryEvent.OnSaveClicked) },
-                            enabled = !uiState.isSaving,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = if (uiState.isSaveErrorVisible) 12.dp else 0.dp)
+
+                        Surface(
+                            modifier = Modifier.imePadding(),
+                            color = MaterialTheme.colorScheme.surface
                         ) {
-                            if (uiState.isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.padding(end = 12.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            }
-                            Text(text = stringResource(id = uiState.saveButtonRes))
+                            ManualEntrySaveBar(
+                                uiState = uiState,
+                                onEvent = onEvent
+                            )
                         }
                     }
                 }
             }
-        } else {
-            {}
-        }
-    ) { innerPadding ->
-        if (uiState.isLoading) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            return@Scaffold
-        }
-
-        if (uiState.isCardMissing) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.card_details_missing_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = stringResource(id = R.string.card_details_missing_message),
-                        modifier = Modifier.padding(top = 10.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            return@Scaffold
-        }
-
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            if (usesConfirmationKeyboardLayout) {
-                ConfirmationManualEntryLayout(
-                    uiState = uiState,
-                    onEvent = onEvent
-                )
-            } else {
-                StandardManualEntryLayout(
-                    uiState = uiState,
-                    onEvent = onEvent
-                )
-            }
         }
     }
-}
 
-@Composable
-private fun StandardManualEntryLayout(
-    uiState: ManualEntryUiState,
-    onEvent: (ManualEntryEvent) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                ManualEntryFormFields(
-                    uiState = uiState,
-                    onEvent = onEvent
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ConfirmationManualEntryLayout(
-    uiState: ManualEntryUiState,
-    onEvent: (ManualEntryEvent) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            ManualEntryFormFields(
-                uiState = uiState,
-                onEvent = onEvent
+    when (activeSheet) {
+        ManualEntrySelectionSheet.CATEGORY -> {
+            SelectionBottomSheet(
+                title = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_category_label),
+                options = uiState.availableCategories.map { option ->
+                    ManualEntrySelectionOption(
+                        id = option.id,
+                        label = option.name
+                    )
+                },
+                selectedOptionId = uiState.selectedCategoryId,
+                onDismiss = { activeSheet = null },
+                onOptionSelected = { categoryId ->
+                    activeSheet = null
+                    onEvent(ManualEntryEvent.OnCategorySelected(categoryId))
+                }
             )
         }
 
-        Surface(
-            shadowElevation = 6.dp
-        ) {
-            ManualEntrySaveBar(
-                uiState = uiState,
-                onEvent = onEvent
+        ManualEntrySelectionSheet.CODE_TYPE -> {
+            SelectionBottomSheet(
+                title = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_code_type_label),
+                options = uiState.availableCodeTypes.map { option ->
+                    ManualEntrySelectionOption(
+                        id = option.codeType.name,
+                        label = option.label
+                    )
+                },
+                selectedOptionId = uiState.selectedCodeType.name,
+                onDismiss = { activeSheet = null },
+                onOptionSelected = { optionId ->
+                    activeSheet = null
+                    CardCodeType.entries.firstOrNull { codeType ->
+                        codeType.name == optionId
+                    }?.let { codeType ->
+                        onEvent(ManualEntryEvent.OnCodeTypeSelected(codeType))
+                    }
+                }
             )
         }
+
+        null -> Unit
+    }
+
+    if (isDatePickerVisible) {
+        ExpirationDatePickerDialog(
+            initialDate = uiState.expirationDateInput,
+            onDismiss = { isDatePickerVisible = false },
+            onDateSelected = { selectedDate ->
+                isDatePickerVisible = false
+                onEvent(ManualEntryEvent.OnExpirationDateChanged(selectedDate))
+            },
+            onClear = {
+                isDatePickerVisible = false
+                onEvent(ManualEntryEvent.OnExpirationDateChanged(""))
+            }
+        )
     }
 }
 
 @Composable
 private fun ManualEntryFormFields(
     uiState: ManualEntryUiState,
-    onEvent: (ManualEntryEvent) -> Unit
+    onEvent: (ManualEntryEvent) -> Unit,
+    onOpenCategorySheet: () -> Unit,
+    onOpenCodeTypeSheet: () -> Unit,
+    onOpenDatePicker: () -> Unit
 ) {
     uiState.reviewMessageRes?.let { reviewMessageRes ->
         Text(
-            text = stringResource(id = reviewMessageRes),
+            text = androidx.compose.ui.res.stringResource(id = reviewMessageRes),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -350,47 +383,64 @@ private fun ManualEntryFormFields(
         value = uiState.cardName,
         onValueChange = { onEvent(ManualEntryEvent.OnCardNameChanged(it)) },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text(text = stringResource(id = R.string.manual_entry_card_name_label)) },
+        label = {
+            Text(text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_card_name_label))
+        },
         enabled = !uiState.isSaving,
         singleLine = true,
         isError = uiState.cardNameError != null,
         supportingText = {
             if (uiState.cardNameError != null) {
-                Text(text = stringResource(id = R.string.manual_entry_required_field_error))
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        id = R.string.manual_entry_required_field_error
+                    )
+                )
             }
         }
     )
 
-    CategorySelector(
-        categories = uiState.availableCategories,
-        selectedCategoryId = uiState.selectedCategoryId,
+    SelectorField(
+        title = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_category_label),
+        value = uiState.availableCategories.firstOrNull { category ->
+            category.id == uiState.selectedCategoryId
+        }?.name.orEmpty(),
         enabled = !uiState.isSaving,
         isError = uiState.categoryError != null,
-        onCategorySelected = { categoryId ->
-            onEvent(ManualEntryEvent.OnCategorySelected(categoryId))
-        }
+        errorText = if (uiState.categoryError != null) {
+            androidx.compose.ui.res.stringResource(id = R.string.manual_entry_required_field_error)
+        } else {
+            null
+        },
+        onClick = onOpenCategorySheet
     )
 
-    CodeTypeSelector(
-        codeTypes = uiState.availableCodeTypes,
-        selectedCodeType = uiState.selectedCodeType,
+    SelectorField(
+        title = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_code_type_label),
+        value = uiState.availableCodeTypes.firstOrNull { codeType ->
+            codeType.codeType == uiState.selectedCodeType
+        }?.label.orEmpty(),
         enabled = !uiState.isSaving,
-        onCodeTypeSelected = { codeType ->
-            onEvent(ManualEntryEvent.OnCodeTypeSelected(codeType))
-        }
+        onClick = onOpenCodeTypeSheet
     )
 
     OutlinedTextField(
         value = uiState.codeValue,
         onValueChange = { onEvent(ManualEntryEvent.OnCodeValueChanged(it)) },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text(text = stringResource(id = R.string.manual_entry_code_value_label)) },
+        label = {
+            Text(text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_code_value_label))
+        },
         enabled = !uiState.isSaving,
         singleLine = true,
         isError = uiState.codeValueError != null,
         supportingText = {
             if (uiState.codeValueError != null) {
-                Text(text = stringResource(id = R.string.manual_entry_required_field_error))
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        id = R.string.manual_entry_required_field_error
+                    )
+                )
             }
         }
     )
@@ -399,38 +449,36 @@ private fun ManualEntryFormFields(
         value = uiState.cardNumber,
         onValueChange = { onEvent(ManualEntryEvent.OnCardNumberChanged(it)) },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text(text = stringResource(id = R.string.manual_entry_card_number_label)) },
-        enabled = !uiState.isSaving,
-        singleLine = true
-    )
-
-    OutlinedTextField(
-        value = uiState.expirationDateInput,
-        onValueChange = { onEvent(ManualEntryEvent.OnExpirationDateChanged(it)) },
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(text = stringResource(id = R.string.manual_entry_expiration_date_label)) },
-        placeholder = { Text(text = stringResource(id = R.string.manual_entry_expiration_date_placeholder)) },
+        label = {
+            Text(text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_card_number_label))
+        },
         enabled = !uiState.isSaving,
         singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
+
+    DateSelectorField(
+        value = uiState.expirationDateInput,
+        enabled = !uiState.isSaving,
         isError = uiState.expirationDateError != null,
-        supportingText = {
-            Text(
-                text = if (uiState.expirationDateError != null) {
-                    stringResource(id = R.string.manual_entry_expiration_date_error)
-                } else {
-                    stringResource(id = R.string.manual_entry_expiration_date_supporting_text)
-                }
-            )
-        }
+        supportingText = if (uiState.expirationDateError != null) {
+            androidx.compose.ui.res.stringResource(id = R.string.manual_entry_expiration_date_error)
+        } else {
+            null
+        },
+        onClick = onOpenDatePicker
     )
 
     OutlinedTextField(
         value = uiState.notes,
         onValueChange = { onEvent(ManualEntryEvent.OnNotesChanged(it)) },
         modifier = Modifier.fillMaxWidth(),
-        label = { Text(text = stringResource(id = R.string.manual_entry_notes_label)) },
+        label = {
+            Text(text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_notes_label))
+        },
         enabled = !uiState.isSaving,
-        minLines = 3
+        minLines = 3,
+        maxLines = 5
     )
 
     FavoriteToggleRow(
@@ -448,11 +496,11 @@ private fun ManualEntrySaveBar(
     onEvent: (ManualEntryEvent) -> Unit
 ) {
     Column(
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         if (uiState.isSaveErrorVisible) {
             Text(
-                text = stringResource(id = R.string.manual_entry_save_error_message),
+                text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_save_error_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
@@ -462,79 +510,165 @@ private fun ManualEntrySaveBar(
             enabled = !uiState.isSaving,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (uiState.isSaveErrorVisible) 12.dp else 0.dp)
+                .padding(top = if (uiState.isSaveErrorVisible) 10.dp else 0.dp),
+            shape = MaterialTheme.shapes.large
         ) {
             if (uiState.isSaving) {
                 CircularProgressIndicator(
                     modifier = Modifier.padding(end = 12.dp),
-                    strokeWidth = 2.dp
+                    strokeWidth = 2.dp,
+                    color = Color.White
                 )
             }
-            Text(text = stringResource(id = uiState.saveButtonRes))
+            Text(text = androidx.compose.ui.res.stringResource(id = uiState.saveButtonRes))
         }
     }
 }
 
-private fun ManualEntryUiState.usesConfirmationKeyboardLayout(): Boolean =
-    titleRes == R.string.scan_barcode_confirmation_title ||
-        titleRes == R.string.scan_card_photo_confirmation_title ||
-        titleRes == R.string.smart_scan_confirmation_title ||
-        titleRes == R.string.google_wallet_import_confirmation_title
-
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun CategorySelector(
-    categories: List<ManualEntryCategoryOptionUiModel>,
-    selectedCategoryId: String?,
+private fun SelectorField(
+    title: String,
+    value: String,
     enabled: Boolean,
-    isError: Boolean,
-    onCategorySelected: (String) -> Unit
+    onClick: () -> Unit,
+    isError: Boolean = false,
+    errorText: String? = null
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedCategoryName = categories.firstOrNull { category ->
-        category.id == selectedCategoryId
-    }?.name.orEmpty()
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { shouldExpand ->
-            if (enabled) {
-                expanded = shouldExpand
-            }
-        }
-    ) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = selectedCategoryName,
+            value = value,
             onValueChange = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(),
+            modifier = Modifier.fillMaxWidth(),
             readOnly = true,
             enabled = enabled,
-            label = { Text(text = stringResource(id = R.string.manual_entry_category_label)) },
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            },
+            label = { Text(text = title) },
+            singleLine = true,
             isError = isError,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.ExpandMore,
+                    contentDescription = null
+                )
+            },
             supportingText = {
-                if (isError) {
-                    Text(text = stringResource(id = R.string.manual_entry_required_field_error))
+                if (errorText != null) {
+                    Text(text = errorText)
                 }
             }
         )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(enabled = enabled, onClick = onClick)
+        )
+    }
+}
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            categories.forEach { category ->
-                DropdownMenuItem(
-                    text = { Text(text = category.name) },
-                    onClick = {
-                        expanded = false
-                        onCategorySelected(category.id)
-                    }
+@Composable
+private fun DateSelectorField(
+    value: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    isError: Boolean,
+    supportingText: String?
+) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            readOnly = true,
+            enabled = enabled,
+            label = {
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        id = R.string.manual_entry_expiration_date_label
+                    )
                 )
+            },
+            placeholder = {
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        id = R.string.manual_entry_expiration_date_placeholder
+                    )
+                )
+            },
+            singleLine = true,
+            isError = isError,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.CalendarToday,
+                    contentDescription = null
+                )
+            },
+            supportingText = {
+                if (supportingText != null) {
+                    Text(text = supportingText)
+                }
+            }
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(enabled = enabled, onClick = onClick)
+        )
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SelectionBottomSheet(
+    title: String,
+    options: List<ManualEntrySelectionOption>,
+    selectedOptionId: String?,
+    onDismiss: () -> Unit,
+    onOptionSelected: (String) -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        ) {
+            Text(
+                text = title,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                items(
+                    items = options,
+                    key = { option -> option.id }
+                ) { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onOptionSelected(option.id) }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = option.label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        if (option.id == selectedOptionId) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -542,53 +676,71 @@ private fun CategorySelector(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun CodeTypeSelector(
-    codeTypes: List<ManualEntryCodeTypeUiModel>,
-    selectedCodeType: com.threemdroid.digitalwallet.core.model.CardCodeType,
-    enabled: Boolean,
-    onCodeTypeSelected: (com.threemdroid.digitalwallet.core.model.CardCodeType) -> Unit
+private fun ExpirationDatePickerDialog(
+    initialDate: String,
+    onDismiss: () -> Unit,
+    onDateSelected: (String) -> Unit,
+    onClear: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedCodeTypeLabel = codeTypes.firstOrNull { codeType ->
-        codeType.codeType == selectedCodeType
-    }?.label.orEmpty()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate.toDatePickerMillisOrNull()
+    )
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { shouldExpand ->
-            if (enabled) {
-                expanded = shouldExpand
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        colors = androidx.compose.material3.DatePickerDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            headlineContentColor = MaterialTheme.colorScheme.onBackground,
+            weekdayContentColor = MaterialTheme.colorScheme.onBackground,
+            subheadContentColor = MaterialTheme.colorScheme.onBackground,
+            yearContentColor = MaterialTheme.colorScheme.onBackground,
+            currentYearContentColor = MaterialTheme.colorScheme.primary,
+            selectedYearContentColor = Color.White,
+            selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+            dayContentColor = MaterialTheme.colorScheme.onBackground,
+            disabledDayContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            selectedDayContentColor = Color.White,
+            disabledSelectedDayContentColor = Color.White,
+            selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+            todayContentColor = MaterialTheme.colorScheme.primary,
+            todayDateBorderColor = MaterialTheme.colorScheme.primary
+        ),
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedDate = datePickerState.selectedDateMillis
+                        ?.toManualEntryDateString()
+                    if (selectedDate != null) {
+                        onDateSelected(selectedDate)
+                    } else {
+                        onDismiss()
+                    }
+                }
+            ) {
+                Text(text = androidx.compose.ui.res.stringResource(id = android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onClear) {
+                    Text(
+                        text = androidx.compose.ui.res.stringResource(
+                            id = R.string.manual_entry_expiration_date_clear
+                        )
+                    )
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        text = androidx.compose.ui.res.stringResource(
+                            id = android.R.string.cancel
+                        )
+                    )
+                }
             }
         }
     ) {
-        OutlinedTextField(
-            value = selectedCodeTypeLabel,
-            onValueChange = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(),
-            readOnly = true,
-            enabled = enabled,
-            label = { Text(text = stringResource(id = R.string.manual_entry_code_type_label)) },
-            trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            }
-        )
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            codeTypes.forEach { codeType ->
-                DropdownMenuItem(
-                    text = { Text(text = codeType.label) },
-                    onClick = {
-                        expanded = false
-                        onCodeTypeSelected(codeType.codeType)
-                    }
-                )
-            }
-        }
+        DatePicker(state = datePickerState)
     }
 }
 
@@ -601,7 +753,8 @@ private fun FavoriteToggleRow(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        tonalElevation = 1.dp
+        color = MaterialTheme.colorScheme.background,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
     ) {
         Row(
             modifier = Modifier
@@ -612,7 +765,7 @@ private fun FavoriteToggleRow(
                     role = Role.Switch,
                     onValueChange = onCheckedChange
                 )
-                .padding(horizontal = 16.dp, vertical = 18.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -620,12 +773,14 @@ private fun FavoriteToggleRow(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = stringResource(id = R.string.manual_entry_favorite_label),
+                    text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_favorite_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = stringResource(id = R.string.manual_entry_favorite_supporting_text),
+                    text = androidx.compose.ui.res.stringResource(
+                        id = R.string.manual_entry_favorite_supporting_text
+                    ),
                     modifier = Modifier.padding(top = 4.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -634,8 +789,23 @@ private fun FavoriteToggleRow(
             Switch(
                 checked = checked,
                 onCheckedChange = null,
-                enabled = enabled
+                enabled = enabled,
+                colors = walletSwitchColors()
             )
         }
     }
 }
+
+private fun String.toDatePickerMillisOrNull(): Long? =
+    runCatching {
+        LocalDate.parse(this)
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+    }.getOrNull()
+
+private fun Long.toManualEntryDateString(): String =
+    Instant.ofEpochMilli(this)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+        .toString()

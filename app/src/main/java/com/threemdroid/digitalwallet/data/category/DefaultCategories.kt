@@ -14,7 +14,7 @@ internal object DefaultCategories {
         DefaultCategoryDefinition(
             id = "default_shopping_loyalty",
             name = "Shopping & Loyalty",
-            color = "#2563EB"
+            color = "#DC2626"
         ),
         DefaultCategoryDefinition(
             id = "default_membership",
@@ -24,17 +24,17 @@ internal object DefaultCategories {
         DefaultCategoryDefinition(
             id = "default_transport",
             name = "Transport",
-            color = "#0891B2"
+            color = "#0F766E"
         ),
         DefaultCategoryDefinition(
             id = "default_tickets",
             name = "Tickets",
-            color = "#DC2626"
+            color = "#2563EB"
         ),
         DefaultCategoryDefinition(
             id = "default_vouchers",
             name = "Vouchers",
-            color = "#F97316"
+            color = "#475569"
         ),
         DefaultCategoryDefinition(
             id = "default_access",
@@ -44,12 +44,12 @@ internal object DefaultCategories {
         DefaultCategoryDefinition(
             id = "default_library",
             name = "Library",
-            color = "#4F46E5"
+            color = "#EC4899"
         ),
         DefaultCategoryDefinition(
             id = "default_other",
             name = "Other",
-            color = "#475569"
+            color = "#92400E"
         )
     )
 

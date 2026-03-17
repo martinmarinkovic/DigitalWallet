@@ -87,9 +87,10 @@
     <string name="manual_entry_code_value_label">Barcode / QR value</string>
     <string name="manual_entry_card_number_label">Card number</string>
     <string name="manual_entry_expiration_date_label">Expiration date</string>
-    <string name="manual_entry_expiration_date_placeholder">YYYY-MM-DD</string>
-    <string name="manual_entry_expiration_date_supporting_text">Optional. Use YYYY-MM-DD.</string>
-    <string name="manual_entry_expiration_date_error">Enter the date as YYYY-MM-DD.</string>
+    <string name="manual_entry_expiration_date_placeholder">Select a date</string>
+    <string name="manual_entry_expiration_date_supporting_text">Optional.</string>
+    <string name="manual_entry_expiration_date_error">Choose a valid date.</string>
+    <string name="manual_entry_expiration_date_clear">Clear</string>
     <string name="manual_entry_notes_label">Notes</string>
     <string name="manual_entry_favorite_label">Favorite</string>
     <string name="manual_entry_favorite_supporting_text">Mark this card for faster access later.</string>

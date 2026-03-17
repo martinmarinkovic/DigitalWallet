@@ -1,11 +1,14 @@
 package com.threemdroid.digitalwallet.feature.carddetails
 
+import com.threemdroid.digitalwallet.core.model.CardCodeType
+
 data class CardDetailsUiState(
     val isLoading: Boolean = true,
     val isCardMissing: Boolean = false,
     val title: String = "",
     val categoryName: String = "",
     val categoryColorHex: String = "",
+    val codeType: CardCodeType = CardCodeType.QR_CODE,
     val codeTypeLabel: String = "",
     val codeValue: String = "",
     val cardNumber: String? = null,
