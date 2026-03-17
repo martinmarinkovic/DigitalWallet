@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Final cleanup pass applied and validated on March 17, 2026.
 - Reminder notification deep-link handling applied on March 16, 2026.
 - Virtual `Favorites` category migration applied on March 16, 2026.
 - Reminder notification-permission handling update applied on March 16, 2026.
@@ -219,6 +220,7 @@ Maintenance rule: update this file after every major task.
 - Data-integrity hardening now rejects any attempt to persist a real stored category with reserved Favorites semantics, including creating a custom category named `Favorites`, upserting a category flagged as favorites, or deleting the virtual Favorites id through the repository API.
 - Legacy stored-Favorites migration coverage remains intact by seeding old invalid rows directly through DAO-level tests instead of through the now-guarded repository API.
 - Permission/security hardening now limits reminder-notification deep-link consumption to a dedicated in-app reminder action instead of trusting any exported launcher intent that happens to carry the card-id extra.
+- Final cleanup pass removed default sample test files, stripped leftover Android Studio theme template comments/commented-out code, and removed the unused theme `Activity` import to keep the codebase production-ready and free of dead sample scaffolding.
 
 ## 3. In Progress
 - No feature implementation is currently in progress.
