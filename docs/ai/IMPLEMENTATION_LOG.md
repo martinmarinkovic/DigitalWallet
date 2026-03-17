@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Bottom-bar spacing fix applied and validated on March 17, 2026.
 - Scan barcode / QR startup fix applied and validated on March 17, 2026.
 - Create-category dialog runtime crash fix applied and validated on March 17, 2026.
 - Crash/stability audit follow-up applied and validated on March 17, 2026.
@@ -235,6 +236,9 @@ Maintenance rule: update this file after every major task.
 - Create-category dialog no longer depends on `FlowRow`; the color swatch chooser now uses a simple fixed-row layout, avoiding the runtime `NoSuchMethodError` seen from the `FlowLayoutKt.FlowRow` signature mismatch on device.
 - Post-fix build verification passes:
   - `./gradlew :app:assembleDebug :app:assembleRelease`
+- Bottom-bar spacing is now corrected in the app shell: the root `Scaffold` now consumes its `innerPadding` after applying it to the `NavHost`, preventing nested top-level `Scaffold`s from reapplying the same bottom insets and creating a visible gap above the bottom navigation bar.
+- Focused shell-layout verification passes:
+  - `./gradlew :app:assembleDebug`
 
 ## 3. In Progress
 - No feature implementation is currently in progress.
