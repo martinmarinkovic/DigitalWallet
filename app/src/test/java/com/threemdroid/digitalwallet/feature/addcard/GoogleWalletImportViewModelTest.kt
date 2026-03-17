@@ -78,6 +78,7 @@ class GoogleWalletImportViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(GoogleWalletImportStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
@@ -125,6 +126,7 @@ class GoogleWalletImportViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(GoogleWalletImportStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
@@ -161,6 +163,7 @@ class GoogleWalletImportViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(GoogleWalletImportStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test

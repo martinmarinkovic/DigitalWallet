@@ -109,6 +109,9 @@ Maintenance rule: update this file after every major task.
 - Focused Play Store compliance verification now passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest'`
   - `./gradlew :app:assembleDebug`
+- Focused UX edge-case verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.PhotoScanViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.SmartScanViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.GoogleWalletImportViewModelTest'`
+  - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
 - Full MVP production-readiness review was completed and documented.
@@ -205,20 +208,19 @@ Maintenance rule: update this file after every major task.
 - MVP test hardening now also covers restore-time replacement of persisted search history, verifies that sync retry batches use the latest local state after an earlier failure, and fixes a timing-sensitive category-creation integration test so it waits for the actual Home state update instead of assuming immediate delivery.
 - Crash/stability hardening now also converts scan-photo, smart-scan, and Google Wallet import launcher/setup failures into their existing failed UI states instead of allowing camera, picker, or scanner startup exceptions to crash the route.
 - Performance hardening now moves ML Kit image loading/post-processing, fullscreen barcode bitmap generation, and backup/restore/export JSON-CSV serialization off the main thread, eliminating the most obvious ANR-class work from active user flows.
+- UX hardening now resets photo-scan, smart-scan image, and Google Wallet image-import routes back to actionable idle state after a successful handoff into confirmation, so backing out of confirmation no longer returns the user to a stale processing spinner.
+- Manual Entry now applies IME-aware padding so the form stays scrollable and the save action remains accessible while the keyboard is open.
 
 ## 3. In Progress
 - No feature implementation is currently in progress.
-- Release-blocker follow-up still remains for Cloud Sync scope removal and real legal destinations.
 
 ## 4. Pending Tasks
-- Remove `Cloud Sync` from shipped MVP release behavior and UI, or hide it behind deferred V1.1 scope until a real backend-connected sync implementation exists.
 - Implement category editing flows.
 - Implement category editing and deeper card context actions inside Category Details.
 
 ## 5. Known Constraints
 - Current codebase is still a single `app` module.
 - Core MVP local flows are implemented, but cloud sync is still foundation-only and does not have a real remote backend in this build.
-- Current code still reflects pre-triage behavior in a few places, including the Cloud Sync row and placeholder legal links.
 - Home and Category Details currently consume the repository layer in UI.
 - Home behavior is covered with ViewModel, repository, and integration tests; there are still no Compose UI tests for the grid or drag gesture, by design.
 - The create-category flow is covered with ViewModel and repository tests; there are still no Compose UI tests for the dialog, by design.
@@ -243,7 +245,6 @@ Maintenance rule: update this file after every major task.
 - There is still a large gap between the documented target architecture and the current implementation.
 - If features are added without establishing the app skeleton first, architectural drift is likely.
 - Search, reorder, reminders, and sync can become inconsistent later if persistence models are not defined early.
-- The current build is not release-ready until the remaining triaged blockers are addressed: Cloud Sync scope mismatch and placeholder legal links.
 - A future real sync backend will still need explicit conflict policy, auth, and merge rules; the current foundation only handles safe outbound queuing from local state.
 - Google Wallet import scope can easily expand beyond supported cases unless kept tightly constrained.
 - The experimental Gradle compatibility flag for KSP may need to be revisited when the project build setup is modernized further.

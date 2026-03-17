@@ -93,6 +93,7 @@ class SmartScanViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(SmartScanStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
@@ -127,6 +128,7 @@ class SmartScanViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(SmartScanStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
@@ -159,6 +161,7 @@ class SmartScanViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(SmartScanStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test

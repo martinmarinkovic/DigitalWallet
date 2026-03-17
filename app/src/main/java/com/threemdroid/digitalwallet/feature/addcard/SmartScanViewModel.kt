@@ -107,6 +107,9 @@ class SmartScanViewModel @Inject constructor(
         cardName: String?
     ) {
         viewModelScope.launch {
+            mutableUiState.update { current ->
+                current.copy(status = SmartScanStatus.IDLE)
+            }
             mutableEffects.emit(
                 SmartScanEffect.OpenConfirmation(
                     ManualEntryRoutes.smartScanConfirmation(

@@ -111,6 +111,9 @@ class GoogleWalletImportViewModel @Inject constructor(
         notes: String?
     ) {
         viewModelScope.launch {
+            mutableUiState.update { current ->
+                current.copy(status = GoogleWalletImportStatus.IDLE)
+            }
             mutableEffects.emit(
                 GoogleWalletImportEffect.OpenConfirmation(
                     ManualEntryRoutes.googleWalletImportConfirmation(

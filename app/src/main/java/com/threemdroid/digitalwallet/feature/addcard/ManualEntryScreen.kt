@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
@@ -167,7 +168,10 @@ private fun ManualEntryScreen(
         },
         bottomBar = if (!uiState.isLoading && !uiState.isCardMissing) {
             {
-                Surface(shadowElevation = 6.dp) {
+                Surface(
+                    modifier = Modifier.imePadding(),
+                    shadowElevation = 6.dp
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
@@ -252,7 +256,9 @@ private fun ManualEntryScreen(
                 .padding(innerPadding)
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {

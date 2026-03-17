@@ -66,6 +66,9 @@ class PhotoScanViewModel @Inject constructor(
             runCatching {
                 photoScanExtractor.extractDetails(uri)
             }.onSuccess { extraction ->
+                mutableUiState.update { current ->
+                    current.copy(status = PhotoScanStatus.IDLE)
+                }
                 mutableEffects.emit(
                     PhotoScanEffect.OpenConfirmation(
                         ManualEntryRoutes.photoScanConfirmation(

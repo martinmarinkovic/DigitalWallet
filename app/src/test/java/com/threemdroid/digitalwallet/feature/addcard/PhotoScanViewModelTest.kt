@@ -81,6 +81,7 @@ class PhotoScanViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(PhotoScanStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
@@ -113,6 +114,7 @@ class PhotoScanViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(PhotoScanStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
@@ -145,6 +147,7 @@ class PhotoScanViewModelTest {
             ),
             deferredEffect.await()
         )
+        assertEquals(PhotoScanStatus.IDLE, viewModel.uiState.value.status)
     }
 
     @Test
