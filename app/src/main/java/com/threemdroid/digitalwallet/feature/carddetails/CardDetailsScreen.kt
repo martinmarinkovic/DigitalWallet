@@ -1,9 +1,11 @@
 package com.threemdroid.digitalwallet.feature.carddetails
 
 import android.app.Activity
+import android.content.Intent
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Bitmap
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +36,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -102,17 +107,25 @@ fun CardDetailsRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val brightnessManager = remember(activity) {
         FullscreenBrightnessManager(
             activity?.window?.let(::WindowBrightnessController) ?: NoOpBrightnessController()
         )
     }
 
-    LaunchedEffect(viewModel) {
+    LaunchedEffect(viewModel, context, snackbarHostState) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 CardDetailsEffect.NavigateBack -> onNavigateBack()
                 is CardDetailsEffect.OpenEdit -> onOpenEdit(effect.cardId)
+                is CardDetailsEffect.OpenShareSheet -> {
+                    if (!context.openShareSheet(effect.title, effect.shareText)) {
+                        snackbarHostState.showSnackbar(
+                            message = context.getString(R.string.card_details_share_failed_message)
+                        )
+                    }
+                }
                 is CardDetailsEffect.OpenFullscreenCode -> onOpenFullscreenCode(effect.cardId)
             }
         }
@@ -132,6 +145,7 @@ fun CardDetailsRoute(
 
     CardDetailsScreen(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent
     )
 }
@@ -140,10 +154,14 @@ fun CardDetailsRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 private fun CardDetailsScreen(
     uiState: CardDetailsUiState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (CardDetailsEvent) -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surface,
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -320,6 +338,16 @@ private fun CardDetailsContent(
                         )
                     }
                 }
+
+                uiState.notes?.let { notes ->
+                    CardDetailsValueBlock(
+                        label = stringResource(id = R.string.card_details_notes_label),
+                        value = notes,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    )
+                }
             }
         }
 
@@ -350,6 +378,30 @@ private fun CardDetailsContent(
                 text = stringResource(id = R.string.card_details_delete),
                 modifier = Modifier.padding(start = 8.dp),
                 color = Color.White
+            )
+        }
+
+        Button(
+            onClick = { onEvent(CardDetailsEvent.OnShareClicked) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isDeleteInProgress,
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Share,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = stringResource(id = R.string.card_details_share),
+                modifier = Modifier.padding(start = 8.dp),
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -510,3 +562,22 @@ private fun Context.findActivity(): Activity? =
         is ContextWrapper -> baseContext.findActivity()
         else -> null
     }
+
+private fun Context.openShareSheet(
+    title: String,
+    shareText: String
+): Boolean {
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, title)
+        putExtra(Intent.EXTRA_TEXT, shareText)
+    }
+    val chooserIntent = Intent.createChooser(shareIntent, null).apply {
+        if (this@openShareSheet !is Activity) {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+    return runCatching {
+        startActivity(chooserIntent)
+    }.isSuccess
+}

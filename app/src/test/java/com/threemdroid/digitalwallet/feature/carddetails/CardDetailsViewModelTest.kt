@@ -315,6 +315,24 @@ class CardDetailsViewModelTest {
     }
 
     @Test
+    fun onShareClicked_emitsShareSheetEffect() = runTest {
+        val viewModel = createViewModelForCard("card_access")
+
+        advanceUntilIdle()
+
+        val deferredEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(CardDetailsEvent.OnShareClicked)
+
+        assertEquals(
+            CardDetailsEffect.OpenShareSheet(
+                title = "Office Badge",
+                shareText = "Office Badge\nCode type: QR Code\nCode value: CODE-card_access"
+            ),
+            deferredEffect.await()
+        )
+    }
+
+    @Test
     fun onOpenFullscreenCodeClicked_emitsOpenFullscreenCode() = runTest {
         val viewModel = createViewModelForCard("card_access")
 

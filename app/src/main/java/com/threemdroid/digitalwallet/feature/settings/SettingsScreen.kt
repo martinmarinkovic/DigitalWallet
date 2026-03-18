@@ -1,8 +1,11 @@
 package com.threemdroid.digitalwallet.feature.settings
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -142,6 +145,16 @@ private fun SettingsRoute(
                 }
 
                 SettingsEffect.OpenPrivacyPolicy -> onOpenPrivacyPolicy()
+
+                SettingsEffect.OpenHelpAndFeedback -> {
+                    if (!context.openHelpAndFeedbackEmail()) {
+                        snackbarHostState.showSnackbar(
+                            message = context.getString(
+                                R.string.settings_help_feedback_unavailable_message
+                            )
+                        )
+                    }
+                }
 
                 SettingsEffect.OpenTerms -> onOpenTerms()
 
@@ -338,6 +351,10 @@ private fun SettingsScreen(
                     SettingsSectionCard(
                         title = stringResource(id = R.string.settings_section_app)
                     ) {
+                        SettingsActionRow(
+                            title = stringResource(id = R.string.settings_help_feedback_title),
+                            onClick = { onEvent(SettingsEvent.OnHelpAndFeedbackClicked) }
+                        )
                         SettingsActionRow(
                             title = stringResource(id = R.string.settings_privacy_policy_title),
                             onClick = { onEvent(SettingsEvent.OnPrivacyPolicyClicked) }
@@ -621,4 +638,20 @@ private fun Context.resolveAppVersionLabel(): String {
     val versionName = packageInfo.versionName.orEmpty().ifBlank { "1.0" }
     val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
     return "$versionName ($versionCode)"
+}
+
+private fun Context.openHelpAndFeedbackEmail(): Boolean {
+    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("mailto:")
+        putExtra(Intent.EXTRA_EMAIL, arrayOf("threemdroid@gmail.com"))
+        putExtra(Intent.EXTRA_SUBJECT, getString(R.string.settings_help_feedback_title))
+    }
+    if (emailIntent.resolveActivity(packageManager) == null) {
+        return false
+    }
+    if (this !is Activity) {
+        emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    startActivity(emailIntent)
+    return true
 }

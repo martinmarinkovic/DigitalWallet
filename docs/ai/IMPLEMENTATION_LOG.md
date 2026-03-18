@@ -4,6 +4,8 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Notes-field IME stabilization / Card Details notes visibility / Help & Feedback email-intent fix applied and validated on March 17, 2026.
+- Card Details share action / shared add-edit Notes IME stabilization / Settings Help & Feedback update applied and validated on March 17, 2026.
 - Add Card background / shared form interaction / default-category palette fixes applied and validated on March 17, 2026.
 - Category-card / Card Details / shared add-edit form UI polish applied and validated on March 17, 2026.
 - Add Card live-scan background/button styling update applied and validated on March 17, 2026.
@@ -38,6 +40,10 @@ Maintenance rule: update this file after every major task.
 - `./gradlew :app:assembleDebug` completes successfully.
 - Focused add-card/form/default-category verification now passes:
   - `./gradlew :app:assembleDebug :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.data.category.CategoryRepositoryTest' --tests 'com.threemdroid.digitalwallet.feature.home.HomeViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.home.CreateCategoryViewModelTest' --tests 'com.threemdroid.digitalwallet.data.transfer.OfflineFirstUserDataTransferRepositoryTest'`
+- Focused Card Details / Settings / shared form verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' :app:assembleDebug`
+- Focused Notes/Card Details/Settings follow-up verification now passes:
+  - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' :app:assembleDebug`
 - Focused category/card-details/form UI verification now passes:
   - `./gradlew :app:assembleDebug`
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest'`

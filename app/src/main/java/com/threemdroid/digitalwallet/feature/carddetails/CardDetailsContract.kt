@@ -37,6 +37,8 @@ sealed interface CardDetailsEvent {
 
     data object OnFavoriteClicked : CardDetailsEvent
 
+    data object OnShareClicked : CardDetailsEvent
+
     data object OnOpenFullscreenCodeClicked : CardDetailsEvent
 }
 
@@ -44,6 +46,11 @@ sealed interface CardDetailsEffect {
     data object NavigateBack : CardDetailsEffect
 
     data class OpenEdit(val cardId: String) : CardDetailsEffect
+
+    data class OpenShareSheet(
+        val title: String,
+        val shareText: String
+    ) : CardDetailsEffect
 
     data class OpenFullscreenCode(val cardId: String) : CardDetailsEffect
 }

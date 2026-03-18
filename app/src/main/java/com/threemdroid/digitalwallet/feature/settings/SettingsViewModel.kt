@@ -120,6 +120,12 @@ class SettingsViewModel @Inject constructor(
                 }
             }
 
+            SettingsEvent.OnHelpAndFeedbackClicked -> {
+                viewModelScope.launch {
+                    mutableEffects.emit(SettingsEffect.OpenHelpAndFeedback)
+                }
+            }
+
             SettingsEvent.OnTermsClicked -> {
                 viewModelScope.launch {
                     mutableEffects.emit(SettingsEffect.OpenTerms)

@@ -62,6 +62,8 @@
     <string name="card_details_favorite_on">Favorite</string>
     <string name="card_details_favorite_off">Not favorite</string>
     <string name="card_details_action_error_message">Unable to update this card. Try again.</string>
+    <string name="card_details_share">Share</string>
+    <string name="card_details_share_failed_message">Unable to open the share sheet. Try again.</string>
     <string name="fullscreen_code_missing_title">Code unavailable</string>
     <string name="fullscreen_code_missing_message">This code could not be loaded.</string>
     <string name="navigate_back">Navigate back</string>
@@ -168,9 +170,11 @@
     <string name="settings_clear_search_history_title">Clear search history</string>
     <string name="settings_clear_search_history_subtitle">Remove saved Home searches from this device.</string>
     <string name="settings_search_history_empty_subtitle">No saved Home searches.</string>
+    <string name="settings_help_feedback_title">Help &amp; Feedback</string>
     <string name="settings_privacy_policy_title">Privacy Policy</string>
     <string name="settings_terms_title">Terms</string>
     <string name="settings_app_version_title">App version</string>
+    <string name="settings_help_feedback_unavailable_message">No email app is available.</string>
     <string name="settings_search_history_cleared_message">Search history cleared.</string>
     <string name="settings_action_failed_message">Unable to update settings. Try again.</string>
     <string name="settings_backup_success_message">Backup saved.</string>

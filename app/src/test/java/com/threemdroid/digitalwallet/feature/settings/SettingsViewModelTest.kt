@@ -426,6 +426,10 @@ class SettingsViewModelTest {
         viewModel.onEvent(SettingsEvent.OnPrivacyPolicyClicked)
         assertEquals(SettingsEffect.OpenPrivacyPolicy, privacyEffect.await())
 
+        val helpEffect = async { viewModel.effects.first() }
+        viewModel.onEvent(SettingsEvent.OnHelpAndFeedbackClicked)
+        assertEquals(SettingsEffect.OpenHelpAndFeedback, helpEffect.await())
+
         val termsEffect = async { viewModel.effects.first() }
         viewModel.onEvent(SettingsEvent.OnTermsClicked)
         assertEquals(SettingsEffect.OpenTerms, termsEffect.await())

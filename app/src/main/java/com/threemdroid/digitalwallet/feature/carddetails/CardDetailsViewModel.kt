@@ -109,6 +109,22 @@ class CardDetailsViewModel @Inject constructor(
 
             CardDetailsEvent.OnFavoriteClicked -> toggleFavorite()
 
+            CardDetailsEvent.OnShareClicked -> {
+                val card = currentCard ?: return
+                viewModelScope.launch {
+                    mutableEffects.emit(
+                        CardDetailsEffect.OpenShareSheet(
+                            title = card.name,
+                            shareText = buildString {
+                                appendLine(card.name)
+                                appendLine("Code type: ${card.codeType.displayLabel()}")
+                                append("Code value: ${card.codeValue}")
+                            }
+                        )
+                    )
+                }
+            }
+
             CardDetailsEvent.OnOpenFullscreenCodeClicked -> {
                 val card = currentCard ?: return
                 viewModelScope.launch {

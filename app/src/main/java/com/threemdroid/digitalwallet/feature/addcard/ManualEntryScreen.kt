@@ -2,6 +2,7 @@ package com.threemdroid.digitalwallet.feature.addcard
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,9 +11,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -42,10 +46,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +71,7 @@ import com.threemdroid.digitalwallet.ui.theme.walletSwitchColors
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
@@ -171,7 +179,7 @@ private data class ManualEntrySelectionOption(
 )
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 private fun ManualEntryScreen(
     uiState: ManualEntryUiState,
     onEvent: (ManualEntryEvent) -> Unit
@@ -181,6 +189,21 @@ private fun ManualEntryScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            if (!uiState.isLoading && !uiState.isCardMissing) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding(),
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    ManualEntrySaveBar(
+                        uiState = uiState,
+                        onEvent = onEvent
+                    )
+                }
+            }
+        },
         topBar = {
             androidx.compose.material3.CenterAlignedTopAppBar(
                 title = {
@@ -265,38 +288,24 @@ private fun ManualEntryScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .imePadding()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            ManualEntryFormFields(
-                                uiState = uiState,
-                                onEvent = onEvent,
-                                onOpenCategorySheet = {
-                                    activeSheet = ManualEntrySelectionSheet.CATEGORY
-                                },
-                                onOpenCodeTypeSheet = {
-                                    activeSheet = ManualEntrySelectionSheet.CODE_TYPE
-                                },
-                                onOpenDatePicker = {
-                                    isDatePickerVisible = true
-                                }
-                            )
-                        }
-
-                        Surface(
-                            modifier = Modifier.imePadding(),
-                            color = MaterialTheme.colorScheme.surface
-                        ) {
-                            ManualEntrySaveBar(
-                                uiState = uiState,
-                                onEvent = onEvent
-                            )
-                        }
+                        ManualEntryFormFields(
+                            uiState = uiState,
+                            onEvent = onEvent,
+                            onOpenCategorySheet = {
+                                activeSheet = ManualEntrySelectionSheet.CATEGORY
+                            },
+                            onOpenCodeTypeSheet = {
+                                activeSheet = ManualEntrySelectionSheet.CODE_TYPE
+                            },
+                            onOpenDatePicker = {
+                                isDatePickerVisible = true
+                            }
+                        )
                     }
                 }
             }
@@ -364,6 +373,7 @@ private fun ManualEntryScreen(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun ManualEntryFormFields(
     uiState: ManualEntryUiState,
     onEvent: (ManualEntryEvent) -> Unit,
@@ -371,6 +381,9 @@ private fun ManualEntryFormFields(
     onOpenCodeTypeSheet: () -> Unit,
     onOpenDatePicker: () -> Unit
 ) {
+    val notesBringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
     uiState.reviewMessageRes?.let { reviewMessageRes ->
         Text(
             text = androidx.compose.ui.res.stringResource(id = reviewMessageRes),
@@ -472,7 +485,16 @@ private fun ManualEntryFormFields(
     OutlinedTextField(
         value = uiState.notes,
         onValueChange = { onEvent(ManualEntryEvent.OnNotesChanged(it)) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .bringIntoViewRequester(notesBringIntoViewRequester)
+            .onFocusEvent { focusState ->
+                if (focusState.isFocused) {
+                    coroutineScope.launch {
+                        notesBringIntoViewRequester.bringIntoView()
+                    }
+                }
+            },
         label = {
             Text(text = androidx.compose.ui.res.stringResource(id = R.string.manual_entry_notes_label))
         },
