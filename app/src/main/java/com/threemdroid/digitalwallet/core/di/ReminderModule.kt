@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.work.WorkManager
 import com.threemdroid.digitalwallet.data.reminder.ExpirationReminderScheduler
 import com.threemdroid.digitalwallet.data.reminder.ExpirationReminderWorkBackend
+import com.threemdroid.digitalwallet.data.reminder.ReminderNotificationAvailabilityMonitor
+import com.threemdroid.digitalwallet.data.reminder.SystemReminderNotificationAvailabilityMonitor
 import com.threemdroid.digitalwallet.data.reminder.WorkManagerExpirationReminderScheduler
 import com.threemdroid.digitalwallet.data.reminder.WorkManagerExpirationReminderWorkBackend
 import dagger.Binds
@@ -43,4 +45,10 @@ abstract class ReminderBindingsModule {
     abstract fun bindExpirationReminderWorkBackend(
         backend: WorkManagerExpirationReminderWorkBackend
     ): ExpirationReminderWorkBackend
+
+    @Binds
+    @Singleton
+    abstract fun bindReminderNotificationAvailabilityMonitor(
+        monitor: SystemReminderNotificationAvailabilityMonitor
+    ): ReminderNotificationAvailabilityMonitor
 }

@@ -18,7 +18,8 @@ class ExpirationReminderSyncer @Inject constructor(
     private val cardRepository: CardRepository,
     private val settingsRepository: SettingsRepository,
     private val scheduleCalculator: ExpirationReminderScheduleCalculator,
-    private val reminderScheduler: ExpirationReminderScheduler
+    private val reminderScheduler: ExpirationReminderScheduler,
+    private val notificationAvailabilityMonitor: ReminderNotificationAvailabilityMonitor
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var syncJob: Job? = null
@@ -31,10 +32,11 @@ class ExpirationReminderSyncer @Inject constructor(
         syncJob = scope.launch {
             combine(
                 settingsRepository.observeSettings(),
-                cardRepository.observeAllCards()
-            ) { settings, cards ->
+                cardRepository.observeAllCards(),
+                notificationAvailabilityMonitor.observeCanPostNotifications()
+            ) { settings, cards, canPostNotifications ->
                 ExpirationReminderSyncPlan(
-                    schedulingEnabled = settings.reminderEnabled,
+                    schedulingEnabled = settings.reminderEnabled && canPostNotifications,
                     reminders = cards
                         .mapNotNull { card ->
                             scheduleCalculator.calculate(

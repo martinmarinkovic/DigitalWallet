@@ -14,6 +14,7 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -48,11 +49,13 @@ class ExpirationReminderSyncerTest {
             )
         )
         val scheduler = FakeExpirationReminderScheduler()
+        val notificationAvailabilityMonitor = FakeReminderNotificationAvailabilityMonitor()
         val syncer = ExpirationReminderSyncer(
             cardRepository = cardRepository,
             settingsRepository = FakeSettingsRepository(),
             scheduleCalculator = ExpirationReminderScheduleCalculator(clock),
-            reminderScheduler = scheduler
+            reminderScheduler = scheduler,
+            notificationAvailabilityMonitor = notificationAvailabilityMonitor
         )
 
         syncer.start()
@@ -78,11 +81,13 @@ class ExpirationReminderSyncerTest {
             )
         )
         val scheduler = FakeExpirationReminderScheduler()
+        val notificationAvailabilityMonitor = FakeReminderNotificationAvailabilityMonitor()
         val syncer = ExpirationReminderSyncer(
             cardRepository = cardRepository,
             settingsRepository = FakeSettingsRepository(),
             scheduleCalculator = ExpirationReminderScheduleCalculator(clock),
-            reminderScheduler = scheduler
+            reminderScheduler = scheduler,
+            notificationAvailabilityMonitor = notificationAvailabilityMonitor
         )
 
         syncer.start()
@@ -104,6 +109,7 @@ class ExpirationReminderSyncerTest {
             )
         )
         val scheduler = FakeExpirationReminderScheduler()
+        val notificationAvailabilityMonitor = FakeReminderNotificationAvailabilityMonitor()
         val syncer = ExpirationReminderSyncer(
             cardRepository = cardRepository,
             settingsRepository = FakeSettingsRepository(
@@ -116,7 +122,8 @@ class ExpirationReminderSyncerTest {
                 )
             ),
             scheduleCalculator = ExpirationReminderScheduleCalculator(clock),
-            reminderScheduler = scheduler
+            reminderScheduler = scheduler,
+            notificationAvailabilityMonitor = notificationAvailabilityMonitor
         )
 
         syncer.start()
@@ -143,11 +150,13 @@ class ExpirationReminderSyncerTest {
         )
         val settingsRepository = FakeSettingsRepository()
         val scheduler = FakeExpirationReminderScheduler()
+        val notificationAvailabilityMonitor = FakeReminderNotificationAvailabilityMonitor()
         val syncer = ExpirationReminderSyncer(
             cardRepository = cardRepository,
             settingsRepository = settingsRepository,
             scheduleCalculator = ExpirationReminderScheduleCalculator(clock),
-            reminderScheduler = scheduler
+            reminderScheduler = scheduler,
+            notificationAvailabilityMonitor = notificationAvailabilityMonitor
         )
 
         syncer.start()
@@ -190,6 +199,69 @@ class ExpirationReminderSyncerTest {
         advanceUntilIdle()
 
         assertTrue(scheduler.calls.last().reminders.isEmpty())
+    }
+
+    @Test
+    fun start_withNotificationsUnavailable_disablesScheduling() = runTest {
+        val cardRepository = FakeCardRepository(
+            cards = listOf(
+                reminderCard(
+                    id = "expiring-card",
+                    expirationDate = LocalDate.parse("2026-03-20")
+                )
+            )
+        )
+        val scheduler = FakeExpirationReminderScheduler()
+        val notificationAvailabilityMonitor = FakeReminderNotificationAvailabilityMonitor(
+            initiallyAvailable = false
+        )
+        val syncer = ExpirationReminderSyncer(
+            cardRepository = cardRepository,
+            settingsRepository = FakeSettingsRepository(),
+            scheduleCalculator = ExpirationReminderScheduleCalculator(clock),
+            reminderScheduler = scheduler,
+            notificationAvailabilityMonitor = notificationAvailabilityMonitor
+        )
+
+        syncer.start()
+        advanceUntilIdle()
+
+        val call = scheduler.calls.single()
+        assertFalse(call.schedulingEnabled)
+        assertEquals(listOf("expiring-card"), call.reminders.map { it.cardId })
+    }
+
+    @Test
+    fun notificationAvailabilityChanges_reschedulesEligibleReminders() = runTest {
+        val cardRepository = FakeCardRepository(
+            cards = listOf(
+                reminderCard(
+                    id = "expiring-card",
+                    expirationDate = LocalDate.parse("2026-03-20")
+                )
+            )
+        )
+        val scheduler = FakeExpirationReminderScheduler()
+        val notificationAvailabilityMonitor = FakeReminderNotificationAvailabilityMonitor(
+            initiallyAvailable = false
+        )
+        val syncer = ExpirationReminderSyncer(
+            cardRepository = cardRepository,
+            settingsRepository = FakeSettingsRepository(),
+            scheduleCalculator = ExpirationReminderScheduleCalculator(clock),
+            reminderScheduler = scheduler,
+            notificationAvailabilityMonitor = notificationAvailabilityMonitor
+        )
+
+        syncer.start()
+        advanceUntilIdle()
+        assertFalse(scheduler.calls.last().schedulingEnabled)
+
+        notificationAvailabilityMonitor.canPostNotificationsFlow.value = true
+        advanceUntilIdle()
+
+        assertTrue(scheduler.calls.last().schedulingEnabled)
+        assertEquals(listOf("expiring-card"), scheduler.calls.last().reminders.map { it.cardId })
     }
 
     private fun reminderCard(
@@ -279,4 +351,13 @@ class ExpirationReminderSyncerTest {
         val reminders: List<ExpirationReminderRequest>,
         val schedulingEnabled: Boolean
     )
+
+    private class FakeReminderNotificationAvailabilityMonitor(
+        initiallyAvailable: Boolean = true
+    ) : ReminderNotificationAvailabilityMonitor {
+        val canPostNotificationsFlow = MutableStateFlow(initiallyAvailable)
+
+        override fun observeCanPostNotifications(): Flow<Boolean> =
+            canPostNotificationsFlow.asStateFlow()
+    }
 }

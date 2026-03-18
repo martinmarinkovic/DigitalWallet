@@ -178,6 +178,7 @@ Maintenance rule: update this file after every major task.
   - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
+- Expiration reminder scheduling now respects real notification delivery availability instead of only the stored reminder toggle, and reminder scheduling is re-synced when the app resumes so granting notification access later can enqueue overdue eligible reminders instead of leaving them silently undelivered.
 - Full MVP production-readiness review was completed and documented.
 - Release triage decisions were recorded:
   - `Cloud Sync` moves out of current MVP release scope and into V1.1 until a real backend-connected implementation exists.
