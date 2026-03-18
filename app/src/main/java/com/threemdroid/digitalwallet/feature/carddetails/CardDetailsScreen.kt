@@ -131,9 +131,9 @@ fun CardDetailsRoute(
         }
     }
 
-    DisposableEffect(uiState.isContentVisible, brightnessManager) {
+    DisposableEffect(uiState.isContentVisible, uiState.shouldMaximizeBrightness, brightnessManager) {
         if (uiState.isContentVisible) {
-            brightnessManager.onVisible(shouldMaximizeBrightness = true)
+            brightnessManager.onVisible(uiState.shouldMaximizeBrightness)
         } else {
             brightnessManager.onHidden()
         }

@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Pre-release production audit stabilization applied and validated on March 18, 2026.
 - Notes-field IME stabilization / Card Details notes visibility / Help & Feedback email-intent fix applied and validated on March 17, 2026.
 - Card Details share action / shared add-edit Notes IME stabilization / Settings Help & Feedback update applied and validated on March 17, 2026.
 - Add Card background / shared form interaction / default-category palette fixes applied and validated on March 17, 2026.
@@ -44,6 +45,8 @@ Maintenance rule: update this file after every major task.
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' :app:assembleDebug`
 - Focused Notes/Card Details/Settings follow-up verification now passes:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' :app:assembleDebug`
+- Full pre-release audit verification now passes:
+  - `./gradlew :app:testDebugUnitTest :app:assembleRelease`
 - Focused category/card-details/form UI verification now passes:
   - `./gradlew :app:assembleDebug`
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.feature.addcard.ManualEntryViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.addcard.EditCardFlowIntegrationTest' --tests 'com.threemdroid.digitalwallet.feature.carddetails.CardDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.categorydetails.CategoryDetailsViewModelTest' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest'`

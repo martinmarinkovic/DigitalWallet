@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.threemdroid.digitalwallet.data.BaseRepositoryTest
 import com.threemdroid.digitalwallet.data.card.OfflineFirstCardRepository
 import com.threemdroid.digitalwallet.data.category.OfflineFirstCategoryRepository
+import com.threemdroid.digitalwallet.data.settings.OfflineFirstSettingsRepository
 import com.threemdroid.digitalwallet.testing.MainDispatcherRule
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,6 +42,12 @@ class CardDetailsIntegrationTest : BaseRepositoryTest() {
         )
     }
 
+    private val settingsRepository by lazy {
+        OfflineFirstSettingsRepository(
+            appSettingsDao = database.appSettingsDao()
+        )
+    }
+
     @Test
     fun realRepositories_loadCardPersistFavoriteToggleAndDelete() = runTest {
         categoryRepository.upsertCategory(
@@ -68,7 +75,8 @@ class CardDetailsIntegrationTest : BaseRepositoryTest() {
                 mapOf(CardDetailsRoutes.cardIdArg to "card_library")
             ),
             categoryRepository = categoryRepository,
-            cardRepository = cardRepository
+            cardRepository = cardRepository,
+            settingsRepository = settingsRepository
         )
 
         advanceUntilIdle()
@@ -137,7 +145,8 @@ class CardDetailsIntegrationTest : BaseRepositoryTest() {
                 mapOf(CardDetailsRoutes.cardIdArg to "card_membership")
             ),
             categoryRepository = categoryRepository,
-            cardRepository = cardRepository
+            cardRepository = cardRepository,
+            settingsRepository = settingsRepository
         )
 
         advanceUntilIdle()

@@ -8,6 +8,7 @@ import com.threemdroid.digitalwallet.core.model.WalletCard
 import com.threemdroid.digitalwallet.core.model.displayLabel
 import com.threemdroid.digitalwallet.data.card.CardRepository
 import com.threemdroid.digitalwallet.data.category.CategoryRepository
+import com.threemdroid.digitalwallet.data.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
@@ -24,7 +25,8 @@ import kotlinx.coroutines.launch
 class CardDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val categoryRepository: CategoryRepository,
-    private val cardRepository: CardRepository
+    private val cardRepository: CardRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
     private val cardId: String? = savedStateHandle[CardDetailsRoutes.cardIdArg]
 
@@ -51,20 +53,22 @@ class CardDetailsViewModel @Inject constructor(
             viewModelScope.launch {
                 combine(
                     cardRepository.observeCard(resolvedCardId),
-                    categoryRepository.observeCategories()
-                ) { card, categories ->
+                    categoryRepository.observeCategories(),
+                    settingsRepository.observeSettings()
+                ) { card, categories, settings ->
                     val category = card?.let { cardValue ->
                         categories.firstOrNull { categoryValue ->
                             categoryValue.id == cardValue.categoryId
                         }
                     }
-                    card to category
-                }.collect { (card, category) ->
+                    Triple(card, category, settings.autoBrightnessEnabled)
+                }.collect { (card, category, shouldMaximizeBrightness) ->
                     currentCard = card
                     mutableUiState.update { current ->
                         card.toUiState(
                             category = category,
-                            currentState = current
+                            currentState = current,
+                            shouldMaximizeBrightness = shouldMaximizeBrightness
                         )
                     }
                 }
@@ -198,7 +202,8 @@ class CardDetailsViewModel @Inject constructor(
 
     private fun WalletCard?.toUiState(
         category: Category?,
-        currentState: CardDetailsUiState
+        currentState: CardDetailsUiState,
+        shouldMaximizeBrightness: Boolean
     ): CardDetailsUiState {
         if (this == null) {
             return currentState.copy(
@@ -213,6 +218,7 @@ class CardDetailsViewModel @Inject constructor(
                 cardNumber = null,
                 expirationDate = null,
                 notes = null,
+                shouldMaximizeBrightness = shouldMaximizeBrightness,
                 isFavorite = false,
                 isDeleteConfirmationVisible = false,
                 isFavoriteUpdating = false,
@@ -232,6 +238,7 @@ class CardDetailsViewModel @Inject constructor(
             cardNumber = cardNumber?.trim()?.takeIf { it.isNotBlank() },
             expirationDate = expirationDate?.toString(),
             notes = notes?.trim()?.takeIf { it.isNotBlank() },
+            shouldMaximizeBrightness = shouldMaximizeBrightness,
             isFavorite = isFavorite,
             isDeleteConfirmationVisible = currentState.isDeleteConfirmationVisible,
             isFavoriteUpdating = false,

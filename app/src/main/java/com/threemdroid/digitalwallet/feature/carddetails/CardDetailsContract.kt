@@ -14,6 +14,7 @@ data class CardDetailsUiState(
     val cardNumber: String? = null,
     val expirationDate: String? = null,
     val notes: String? = null,
+    val shouldMaximizeBrightness: Boolean = true,
     val isFavorite: Boolean = false,
     val isDeleteConfirmationVisible: Boolean = false,
     val isFavoriteUpdating: Boolean = false,

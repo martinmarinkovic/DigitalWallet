@@ -1,12 +1,16 @@
 package com.threemdroid.digitalwallet.feature.carddetails
 
 import androidx.lifecycle.SavedStateHandle
+import com.threemdroid.digitalwallet.core.model.AppSettings
 import com.threemdroid.digitalwallet.core.model.CardCodeType
 import com.threemdroid.digitalwallet.core.model.Category
 import com.threemdroid.digitalwallet.core.model.CategoryWithCardCount
+import com.threemdroid.digitalwallet.core.model.ReminderTiming
+import com.threemdroid.digitalwallet.core.model.ThemeMode
 import com.threemdroid.digitalwallet.core.model.WalletCard
 import com.threemdroid.digitalwallet.data.card.CardRepository
 import com.threemdroid.digitalwallet.data.category.CategoryRepository
+import com.threemdroid.digitalwallet.data.settings.SettingsRepository
 import com.threemdroid.digitalwallet.testing.MainDispatcherRule
 import java.time.Instant
 import java.time.LocalDate
@@ -60,7 +64,8 @@ class CardDetailsViewModelTest {
                     )
                 )
             ),
-            cardRepository = cardRepository
+            cardRepository = cardRepository,
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -107,7 +112,8 @@ class CardDetailsViewModelTest {
                         notes = null
                     )
                 )
-            )
+            ),
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -147,7 +153,8 @@ class CardDetailsViewModelTest {
                         notes = "   "
                     )
                 )
-            )
+            ),
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -160,11 +167,48 @@ class CardDetailsViewModelTest {
     }
 
     @Test
+    fun init_usesPersistedAutoBrightnessSetting() = runTest {
+        val viewModel = CardDetailsViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CardDetailsRoutes.cardIdArg to "card_access")
+            ),
+            categoryRepository = FakeCategoryRepository(
+                categories = listOf(
+                    category(
+                        id = "default_access",
+                        name = "Access",
+                        color = "#4B5563",
+                        position = 6
+                    )
+                )
+            ),
+            cardRepository = FakeCardRepository(
+                cards = listOf(
+                    walletCard(
+                        id = "card_access",
+                        categoryId = "default_access",
+                        name = "Office Badge",
+                        codeType = CardCodeType.QR_CODE
+                    )
+                )
+            ),
+            settingsRepository = FakeSettingsRepository(
+                appSettings = AppSettings(autoBrightnessEnabled = false)
+            )
+        )
+
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.shouldMaximizeBrightness)
+    }
+
+    @Test
     fun init_withoutCardId_exposesMissingStateInsteadOfCrashing() = runTest {
         val viewModel = CardDetailsViewModel(
             savedStateHandle = SavedStateHandle(),
             categoryRepository = FakeCategoryRepository(),
-            cardRepository = FakeCardRepository()
+            cardRepository = FakeCardRepository(),
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -200,7 +244,8 @@ class CardDetailsViewModelTest {
                     )
                 )
             ),
-            cardRepository = cardRepository
+            cardRepository = cardRepository,
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -238,7 +283,8 @@ class CardDetailsViewModelTest {
                     )
                 )
             ),
-            cardRepository = cardRepository
+            cardRepository = cardRepository,
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -288,7 +334,8 @@ class CardDetailsViewModelTest {
                     )
                 )
             ),
-            cardRepository = cardRepository
+            cardRepository = cardRepository,
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -354,7 +401,8 @@ class CardDetailsViewModelTest {
                 mapOf(CardDetailsRoutes.cardIdArg to "missing_card")
             ),
             categoryRepository = FakeCategoryRepository(),
-            cardRepository = FakeCardRepository()
+            cardRepository = FakeCardRepository(),
+            settingsRepository = FakeSettingsRepository()
         )
 
         advanceUntilIdle()
@@ -441,6 +489,38 @@ class CardDetailsViewModelTest {
         }
     }
 
+    private class FakeSettingsRepository(
+        appSettings: AppSettings = AppSettings()
+    ) : SettingsRepository {
+        private val settingsFlow = MutableStateFlow(appSettings)
+
+        override fun observeSettings(): Flow<AppSettings> = settingsFlow
+
+        override suspend fun updateSettings(settings: AppSettings) {
+            settingsFlow.value = settings
+        }
+
+        override suspend fun setThemeMode(themeMode: ThemeMode) {
+            settingsFlow.value = settingsFlow.value.copy(themeMode = themeMode)
+        }
+
+        override suspend fun setAutoBrightnessEnabled(enabled: Boolean) {
+            settingsFlow.value = settingsFlow.value.copy(autoBrightnessEnabled = enabled)
+        }
+
+        override suspend fun setReminderEnabled(enabled: Boolean) {
+            settingsFlow.value = settingsFlow.value.copy(reminderEnabled = enabled)
+        }
+
+        override suspend fun setReminderTiming(reminderTiming: ReminderTiming) {
+            settingsFlow.value = settingsFlow.value.copy(reminderTiming = reminderTiming)
+        }
+
+        override suspend fun setCloudSyncEnabled(enabled: Boolean) {
+            settingsFlow.value = settingsFlow.value.copy(cloudSyncEnabled = enabled)
+        }
+    }
+
     private companion object {
         val fixedTimestamp: Instant = Instant.parse("2026-03-13T10:00:00Z")
 
@@ -468,7 +548,8 @@ class CardDetailsViewModelTest {
                             codeType = CardCodeType.QR_CODE
                         )
                     )
-                )
+                ),
+                settingsRepository = FakeSettingsRepository()
             )
 
         fun category(

@@ -266,6 +266,7 @@ class SyncRepositoryTest : BaseRepositoryTest() {
         categoryRepository.upsertCategory(category)
         cardRepository.upsertCard(card)
         settingsRepository.setCloudSyncEnabled(true)
+        cardRepository.deleteCard(card.id)
         categoryRepository.deleteCategory(category.id)
 
         assertEquals(2, syncRepository.observeSyncStatus().first().pendingChangeCount)
