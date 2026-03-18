@@ -2,6 +2,7 @@ package com.threemdroid.digitalwallet.feature.settings
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -641,17 +642,19 @@ private fun Context.resolveAppVersionLabel(): String {
 }
 
 private fun Context.openHelpAndFeedbackEmail(): Boolean {
-    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-        data = Uri.parse("mailto:")
-        putExtra(Intent.EXTRA_EMAIL, arrayOf("threemdroid@gmail.com"))
+    val emailIntent = Intent(
+        Intent.ACTION_SENDTO,
+        Uri.parse("mailto:threemdroid@gmail.com")
+    ).apply {
         putExtra(Intent.EXTRA_SUBJECT, getString(R.string.settings_help_feedback_title))
     }
-    if (emailIntent.resolveActivity(packageManager) == null) {
-        return false
+    return try {
+        if (this !is Activity) {
+            emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(emailIntent)
+        true
+    } catch (_: ActivityNotFoundException) {
+        false
     }
-    if (this !is Activity) {
-        emailIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    startActivity(emailIntent)
-    return true
 }
