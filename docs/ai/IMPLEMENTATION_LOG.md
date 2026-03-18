@@ -4,6 +4,7 @@ Maintenance rule: update this file after every major task.
 
 ## 1. Current Build Status
 - Verified on March 17, 2026.
+- Release-only Add Card scanner startup crash hardening applied and validated on March 18, 2026.
 - Expiration reminder scheduling/delivery audit fix applied and validated on March 18, 2026.
 - Help & Feedback email-intent false-negative fix applied and validated on March 18, 2026.
 - Pre-release production audit stabilization applied and validated on March 18, 2026.
@@ -88,6 +89,8 @@ Maintenance rule: update this file after every major task.
 - Focused reminder pipeline verification now passes after the notification-availability resync fix:
   - `./gradlew :app:testDebugUnitTest --tests 'com.threemdroid.digitalwallet.data.reminder.*' --tests 'com.threemdroid.digitalwallet.feature.settings.SettingsViewModelTest'`
   - `./gradlew :app:assembleDebug`
+- Focused release scanner verification now passes:
+  - `./gradlew :app:assembleRelease`
 - Build status is green for debug assemble and the current reminder scope.
 - The app now has a working shell with Home as the start destination and exactly three bottom navigation items: `Home`, `Add Card`, and `Settings`.
 - The app shell now renders the bottom bar only on the three top-level start destinations and hides it on deep routes such as Category Details, Card Details, add/edit flows, scanner/import flows, and Fullscreen Code View.
@@ -178,6 +181,7 @@ Maintenance rule: update this file after every major task.
   - `./gradlew :app:assembleDebug`
 
 ## 2. Completed Work
+- The default Add Card live scanner no longer lets release-only CameraX / ML Kit startup failures escape composition and crash the app; release now also keeps the scanner preview implementation and ML Kit barcode registrars needed by the live camera entry path.
 - Expiration reminder scheduling now respects real notification delivery availability instead of only the stored reminder toggle, and reminder scheduling is re-synced when the app resumes so granting notification access later can enqueue overdue eligible reminders instead of leaving them silently undelivered.
 - Full MVP production-readiness review was completed and documented.
 - Release triage decisions were recorded:

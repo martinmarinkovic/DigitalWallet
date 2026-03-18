@@ -44,6 +44,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +71,7 @@ import com.threemdroid.digitalwallet.R
 import com.threemdroid.digitalwallet.core.model.CardCodeType
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.collectLatest
 
 fun NavGraphBuilder.scanBarcodeScreen(
@@ -369,35 +371,57 @@ private fun ScanBarcodeCameraPreview(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val previewView = remember(context) {
-        PreviewView(context).apply {
-            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-            scaleType = PreviewView.ScaleType.FILL_CENTER
+    val scope = rememberCoroutineScope()
+    val previewViewResult = remember(context) {
+        runCatching {
+            PreviewView(context).apply {
+                implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                scaleType = PreviewView.ScaleType.FILL_CENTER
+            }
         }
     }
+    val previewView = previewViewResult.getOrNull()
     val mainExecutor = remember(context) { ContextCompat.getMainExecutor(context) }
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-    val barcodeScanner = remember {
-        BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(
-                    Barcode.FORMAT_QR_CODE,
-                    Barcode.FORMAT_AZTEC,
-                    Barcode.FORMAT_PDF417,
-                    Barcode.FORMAT_CODE_128,
-                    Barcode.FORMAT_CODE_39,
-                    Barcode.FORMAT_EAN_13,
-                    Barcode.FORMAT_EAN_8,
-                    Barcode.FORMAT_UPC_A,
-                    Barcode.FORMAT_UPC_E,
-                    Barcode.FORMAT_ITF
-                )
-                .build()
-        )
+    val barcodeScannerResult = remember {
+        runCatching {
+            BarcodeScanning.getClient(
+                BarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(
+                        Barcode.FORMAT_QR_CODE,
+                        Barcode.FORMAT_AZTEC,
+                        Barcode.FORMAT_PDF417,
+                        Barcode.FORMAT_CODE_128,
+                        Barcode.FORMAT_CODE_39,
+                        Barcode.FORMAT_EAN_13,
+                        Barcode.FORMAT_EAN_8,
+                        Barcode.FORMAT_UPC_A,
+                        Barcode.FORMAT_UPC_E,
+                        Barcode.FORMAT_ITF
+                    )
+                    .build()
+            )
+        }
     }
+    val barcodeScanner = barcodeScannerResult.getOrNull()
     val currentOnInitialized by rememberUpdatedState(onInitialized)
     val currentOnInitializationFailed by rememberUpdatedState(onInitializationFailed)
     val currentOnCodeDetected by rememberUpdatedState(onCodeDetected)
+
+    LaunchedEffect(previewView, barcodeScanner) {
+        if (previewView == null || barcodeScanner == null) {
+            currentOnInitializationFailed()
+        }
+    }
+
+    if (previewView == null || barcodeScanner == null) {
+        DisposableEffect(analysisExecutor) {
+            onDispose {
+                analysisExecutor.shutdown()
+            }
+        }
+        return
+    }
 
     DisposableEffect(barcodeScanner, analysisExecutor) {
         onDispose {
@@ -416,7 +440,17 @@ private fun ScanBarcodeCameraPreview(
         val isProcessingFrame = AtomicBoolean(false)
         val isDisposed = AtomicBoolean(false)
         var boundCameraProvider: ProcessCameraProvider? = null
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        val cameraProviderFuture = runCatching {
+            ProcessCameraProvider.getInstance(context)
+        }.getOrElse {
+            scope.launch {
+                currentOnInitializationFailed()
+            }
+            return@DisposableEffect onDispose {
+                isDisposed.set(true)
+                boundCameraProvider?.unbindAll()
+            }
+        }
 
         val listener = Runnable {
             if (isDisposed.get()) {
