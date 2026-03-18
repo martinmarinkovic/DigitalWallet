@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Digital Wallet</string>
+    <string name="app_name">CardKeeper: Cards &amp; Passes</string>
     <string name="nav_home">Home</string>
     <string name="nav_add_card">Add Card</string>
     <string name="nav_settings">Settings</string>
