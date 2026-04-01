@@ -45,6 +45,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import java.io.File
 import kotlinx.coroutines.flow.collectLatest
 
@@ -176,64 +177,71 @@ private fun PhotoScanScreen(
             )
         }
     ) { innerPadding ->
-        Surface(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
             ) {
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (uiState.status.showProgress) {
-                            CircularProgressIndicator()
-                        }
-                        Text(
-                            text = stringResource(id = uiState.status.titleRes),
-                            modifier = Modifier.padding(top = if (uiState.status.showProgress) 20.dp else 0.dp),
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = stringResource(id = uiState.status.messageRes),
-                            modifier = Modifier.padding(top = 12.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-
-                if (uiState.status.showActions) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     item {
-                        Button(
-                            onClick = { onEvent(PhotoScanEvent.OnTakePhotoClicked) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 28.dp)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(text = stringResource(id = R.string.scan_card_photo_take_photo))
+                            if (uiState.status.showProgress) {
+                                CircularProgressIndicator()
+                            }
+                            Text(
+                                text = stringResource(id = uiState.status.titleRes),
+                                modifier = Modifier.padding(top = if (uiState.status.showProgress) 20.dp else 0.dp),
+                                style = MaterialTheme.typography.headlineSmall,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = stringResource(id = uiState.status.messageRes),
+                                modifier = Modifier.padding(top = 12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
 
-                    item {
-                        OutlinedButton(
-                            onClick = { onEvent(PhotoScanEvent.OnChooseImageClicked) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 12.dp)
-                        ) {
-                            Text(text = stringResource(id = R.string.scan_card_photo_choose_image))
+                    if (uiState.status.showActions) {
+                        item {
+                            Button(
+                                onClick = { onEvent(PhotoScanEvent.OnTakePhotoClicked) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 28.dp)
+                            ) {
+                                Text(text = stringResource(id = R.string.scan_card_photo_take_photo))
+                            }
+                        }
+
+                        item {
+                            OutlinedButton(
+                                onClick = { onEvent(PhotoScanEvent.OnChooseImageClicked) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                            ) {
+                                Text(text = stringResource(id = R.string.scan_card_photo_choose_image))
+                            }
                         }
                     }
                 }
             }
+            BannerAd()
         }
     }
 }

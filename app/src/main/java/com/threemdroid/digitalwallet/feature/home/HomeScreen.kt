@@ -86,6 +86,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -197,55 +198,60 @@ private fun HomeScreen(
             }
         }
     ) { innerPadding ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (uiState.isSearchExpanded && uiState.searchQuery.isNotBlank()) {
-            SearchResultsContent(
-                uiState = uiState,
-                modifier = Modifier.padding(innerPadding),
-                onCategoryClicked = { categoryId ->
-                    onEvent(HomeEvent.OnCategoryClicked(categoryId))
-                },
-                onCardClicked = { cardId ->
-                    onEvent(HomeEvent.OnCardSearchResultClicked(cardId))
-                }
-            )
-        } else {
-            CategoryGridContent(
-                categories = uiState.categories,
-                isCategoryReordering = uiState.isCategoryReordering,
-                modifier = Modifier.padding(innerPadding),
-                onCategoryClicked = { categoryId ->
-                    onEvent(HomeEvent.OnCategoryClicked(categoryId))
-                },
-                onNewCategoryClicked = {
-                    onEvent(HomeEvent.OnNewCategoryClicked)
-                },
-                onCategoryReorderStarted = { categoryId ->
-                    onEvent(HomeEvent.OnCategoryReorderStarted(categoryId))
-                },
-                onCategoryReorderMoved = { fromCategoryId, toCategoryId ->
-                    onEvent(
-                        HomeEvent.OnCategoryReorderMoved(
-                            fromCategoryId = fromCategoryId,
-                            toCategoryId = toCategoryId
-                        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (uiState.isSearchExpanded && uiState.searchQuery.isNotBlank()) {
+                    SearchResultsContent(
+                        uiState = uiState,
+                        onCategoryClicked = { categoryId ->
+                            onEvent(HomeEvent.OnCategoryClicked(categoryId))
+                        },
+                        onCardClicked = { cardId ->
+                            onEvent(HomeEvent.OnCardSearchResultClicked(cardId))
+                        }
                     )
-                },
-                onCategoryReorderFinished = {
-                    onEvent(HomeEvent.OnCategoryReorderFinished)
-                },
-                onCategoryReorderCancelled = {
-                    onEvent(HomeEvent.OnCategoryReorderCancelled)
+                } else {
+                    CategoryGridContent(
+                        categories = uiState.categories,
+                        isCategoryReordering = uiState.isCategoryReordering,
+                        onCategoryClicked = { categoryId ->
+                            onEvent(HomeEvent.OnCategoryClicked(categoryId))
+                        },
+                        onNewCategoryClicked = {
+                            onEvent(HomeEvent.OnNewCategoryClicked)
+                        },
+                        onCategoryReorderStarted = { categoryId ->
+                            onEvent(HomeEvent.OnCategoryReorderStarted(categoryId))
+                        },
+                        onCategoryReorderMoved = { fromCategoryId, toCategoryId ->
+                            onEvent(
+                                HomeEvent.OnCategoryReorderMoved(
+                                    fromCategoryId = fromCategoryId,
+                                    toCategoryId = toCategoryId
+                                )
+                            )
+                        },
+                        onCategoryReorderFinished = {
+                            onEvent(HomeEvent.OnCategoryReorderFinished)
+                        },
+                        onCategoryReorderCancelled = {
+                            onEvent(HomeEvent.OnCategoryReorderCancelled)
+                        }
+                    )
                 }
-            )
+            }
+            BannerAd()
         }
     }
 }

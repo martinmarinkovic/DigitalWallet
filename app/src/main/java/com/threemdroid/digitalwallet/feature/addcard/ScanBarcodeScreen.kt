@@ -68,6 +68,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import com.threemdroid.digitalwallet.core.model.CardCodeType
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -216,9 +217,12 @@ private fun ScanBarcodeScreen(
             }
         },
         bottomBar = {
-            ScanBarcodeBottomActions(
-                onTryOtherWayClicked = { onEvent(ScanBarcodeEvent.OnTryOtherWayClicked) }
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                BannerAd()
+                ScanBarcodeBottomActions(
+                    onTryOtherWayClicked = { onEvent(ScanBarcodeEvent.OnTryOtherWayClicked) }
+                )
+            }
         }
     ) { innerPadding ->
         Box(

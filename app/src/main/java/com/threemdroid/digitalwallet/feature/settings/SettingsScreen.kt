@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import com.threemdroid.digitalwallet.core.model.ReminderTiming
 import com.threemdroid.digitalwallet.core.model.ThemeMode
 import com.threemdroid.digitalwallet.core.navigation.TopLevelDestination
@@ -145,7 +146,18 @@ private fun SettingsRoute(
                     )
                 }
 
-                SettingsEffect.OpenPrivacyPolicy -> onOpenPrivacyPolicy()
+                SettingsEffect.OpenPrivacyPolicy -> {
+                    runCatching {
+                        val intent = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://iomc.rs/android/privacy.html")
+                        )
+                        if (context !is Activity) {
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    }
+                }
 
                 SettingsEffect.OpenHelpAndFeedback -> {
                     if (!context.openHelpAndFeedbackEmail()) {
@@ -225,10 +237,15 @@ private fun SettingsScreen(
             return@Scaffold
         }
 
-        Surface(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+        ) {
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
             color = MaterialTheme.colorScheme.background
         ) {
             LazyColumn(
@@ -371,6 +388,8 @@ private fun SettingsScreen(
                     }
                 }
             }
+        }
+        BannerAd()
         }
 
         uiState.pendingRestorePreview?.let { preview ->

@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.times
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 import com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenBrightnessManager
 import com.threemdroid.digitalwallet.feature.fullscreencode.FullscreenCodeBitmapRenderer
@@ -219,37 +220,40 @@ private fun CardDetailsScreen(
             )
         }
     ) { innerPadding ->
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    uiState.isCardMissing -> {
+                        CardDetailsStatusState(
+                            modifier = Modifier.fillMaxSize(),
+                            title = stringResource(id = R.string.card_details_missing_title),
+                            message = stringResource(id = R.string.card_details_missing_message)
+                        )
+                    }
+
+                    else -> {
+                        CardDetailsContent(
+                            modifier = Modifier.fillMaxSize(),
+                            uiState = uiState,
+                            onEvent = onEvent
+                        )
+                    }
                 }
             }
-
-            uiState.isCardMissing -> {
-                CardDetailsStatusState(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    title = stringResource(id = R.string.card_details_missing_title),
-                    message = stringResource(id = R.string.card_details_missing_message)
-                )
-            }
-
-            else -> {
-                CardDetailsContent(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    uiState = uiState,
-                    onEvent = onEvent
-                )
-            }
+            BannerAd()
         }
     }
 

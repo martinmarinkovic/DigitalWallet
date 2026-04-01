@@ -101,7 +101,7 @@ class EditCardFlowIntegrationTest : BaseRepositoryTest() {
         viewModel.onEvent(ManualEntryEvent.OnSaveClicked)
         advanceUntilIdle()
 
-        assertEquals(ManualEntryEffect.NavigateBack, savedEffect.await())
+        assertEquals(ManualEntryEffect.CardEdited, savedEffect.await())
 
         val movedCard = cardRepository.observeCard("card-1").first()
         assertEquals("Updated Membership Card", movedCard?.name)

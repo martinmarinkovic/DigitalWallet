@@ -282,7 +282,7 @@ class ManualEntryViewModel @Inject constructor(
                 if (editingCard == null) {
                     mutableEffects.emit(ManualEntryEffect.CardSaved(card.categoryId))
                 } else {
-                    mutableEffects.emit(ManualEntryEffect.NavigateBack)
+                    mutableEffects.emit(ManualEntryEffect.CardEdited)
                 }
             }.onFailure {
                 mutableUiState.update { current ->

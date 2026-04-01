@@ -36,3 +36,8 @@
 -keep class com.google.mlkit.common.internal.CommonComponentRegistrar { *; }
 -keep class com.google.mlkit.vision.common.internal.VisionCommonRegistrar { *; }
 -keep class com.google.mlkit.vision.barcode.internal.BarcodeRegistrar { *; }
+
+# Google Mobile Ads SDK – keep ad classes and reflection-based internals intact for release.
+-keep class com.google.android.gms.ads.** { *; }
+-keep class com.google.ads.** { *; }
+-dontwarn com.google.android.gms.ads.**

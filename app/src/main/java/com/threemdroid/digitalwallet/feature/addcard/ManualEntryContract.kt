@@ -260,4 +260,6 @@ sealed interface ManualEntryEffect {
     data object NavigateBack : ManualEntryEffect
 
     data class CardSaved(val categoryId: String) : ManualEntryEffect
+
+    data object CardEdited : ManualEntryEffect
 }

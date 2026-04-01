@@ -2,6 +2,8 @@ package com.threemdroid.digitalwallet.app
 
 import android.app.Application
 import android.os.Build
+import com.google.android.gms.ads.MobileAds
+import com.threemdroid.digitalwallet.core.ads.InterstitialAdManager
 import com.threemdroid.digitalwallet.data.reminder.ExpirationReminderSyncer
 import com.threemdroid.digitalwallet.data.sync.CloudSyncSyncer
 import dagger.hilt.android.HiltAndroidApp
@@ -20,6 +22,8 @@ class DigitalWalletApplication : Application() {
         if (Build.FINGERPRINT != "robolectric") {
             expirationReminderSyncerProvider.get().start()
             cloudSyncSyncerProvider.get().start()
+            MobileAds.initialize(this)
+            InterstitialAdManager.preload(this)
         }
     }
 }

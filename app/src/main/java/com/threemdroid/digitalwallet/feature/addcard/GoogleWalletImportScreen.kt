@@ -40,6 +40,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import kotlinx.coroutines.flow.collectLatest
 
 fun NavGraphBuilder.googleWalletImportScreen(
@@ -124,10 +125,15 @@ private fun GoogleWalletImportScreen(
             )
         }
     ) { innerPadding ->
-        Surface(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+        ) {
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -220,6 +226,8 @@ private fun GoogleWalletImportScreen(
                     }
                 }
             }
+        }
+        BannerAd()
         }
     }
 }

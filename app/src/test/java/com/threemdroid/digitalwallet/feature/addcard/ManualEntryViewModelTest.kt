@@ -404,7 +404,7 @@ class ManualEntryViewModelTest {
         viewModel.onEvent(ManualEntryEvent.OnSaveClicked)
         advanceUntilIdle()
 
-        assertEquals(ManualEntryEffect.NavigateBack, savedEffect.await())
+        assertEquals(ManualEntryEffect.CardEdited, savedEffect.await())
         val savedCard = cardRepository.observeCard(existingCard.id).first()
         assertEquals("Updated Badge", savedCard?.name)
         assertEquals("default_access", savedCard?.categoryId)

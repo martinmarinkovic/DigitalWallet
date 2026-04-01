@@ -65,6 +65,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
+import com.threemdroid.digitalwallet.core.ads.InterstitialAdManager
 import com.threemdroid.digitalwallet.core.model.CardCodeType
 import com.threemdroid.digitalwallet.feature.carddetails.EditCardRoutes
 import com.threemdroid.digitalwallet.ui.theme.walletSwitchColors
@@ -152,12 +154,22 @@ fun ManualEntryRoute(
     viewModel: ManualEntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collectLatest { effect ->
             when (effect) {
                 ManualEntryEffect.NavigateBack -> onNavigateBack()
-                is ManualEntryEffect.CardSaved -> onCardSaved(effect.categoryId)
+                is ManualEntryEffect.CardSaved -> {
+                    InterstitialAdManager.show(context) {
+                        onCardSaved(effect.categoryId)
+                    }
+                }
+                ManualEntryEffect.CardEdited -> {
+                    InterstitialAdManager.show(context) {
+                        onNavigateBack()
+                    }
+                }
             }
         }
     }
@@ -190,17 +202,20 @@ private fun ManualEntryScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            if (!uiState.isLoading && !uiState.isCardMissing) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding(),
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    ManualEntrySaveBar(
-                        uiState = uiState,
-                        onEvent = onEvent
-                    )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                BannerAd()
+                if (!uiState.isLoading && !uiState.isCardMissing) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding(),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        ManualEntrySaveBar(
+                            uiState = uiState,
+                            onEvent = onEvent
+                        )
+                    }
                 }
             }
         },

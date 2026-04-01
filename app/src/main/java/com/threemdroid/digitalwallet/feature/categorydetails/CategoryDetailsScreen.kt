@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,6 +65,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 import kotlinx.coroutines.flow.collectLatest
 
@@ -165,69 +167,70 @@ private fun CategoryDetailsScreen(
             )
         }
     ) { innerPadding ->
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    uiState.isCategoryMissing -> {
+                        CategoryDetailsStatusState(
+                            modifier = Modifier.fillMaxSize(),
+                            title = stringResource(id = R.string.category_details_missing_title),
+                            message = stringResource(id = R.string.category_details_missing_message)
+                        )
+                    }
+
+                    uiState.isEmpty -> {
+                        CategoryDetailsEmptyState(
+                            modifier = Modifier.fillMaxSize(),
+                            onAddCardClicked = {
+                                onEvent(CategoryDetailsEvent.OnAddCardClicked)
+                            }
+                        )
+                    }
+
+                    else -> {
+                        CategoryCardsGrid(
+                            cards = uiState.cards,
+                            isCardReordering = uiState.isCardReordering,
+                            isCardReorderEnabled = uiState.isCardReorderEnabled,
+                            modifier = Modifier.fillMaxSize(),
+                            onCardClicked = { cardId ->
+                                onEvent(CategoryDetailsEvent.OnCardClicked(cardId))
+                            },
+                            onCardReorderStarted = { cardId ->
+                                onEvent(CategoryDetailsEvent.OnCardReorderStarted(cardId))
+                            },
+                            onCardReorderMoved = { fromCardId, toCardId ->
+                                onEvent(
+                                    CategoryDetailsEvent.OnCardReorderMoved(
+                                        fromCardId = fromCardId,
+                                        toCardId = toCardId
+                                    )
+                                )
+                            },
+                            onCardReorderFinished = {
+                                onEvent(CategoryDetailsEvent.OnCardReorderFinished)
+                            },
+                            onCardReorderCancelled = {
+                                onEvent(CategoryDetailsEvent.OnCardReorderCancelled)
+                            }
+                        )
+                    }
                 }
             }
-
-            uiState.isCategoryMissing -> {
-                CategoryDetailsStatusState(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    title = stringResource(id = R.string.category_details_missing_title),
-                    message = stringResource(id = R.string.category_details_missing_message)
-                )
-            }
-
-            uiState.isEmpty -> {
-                CategoryDetailsEmptyState(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    onAddCardClicked = {
-                        onEvent(CategoryDetailsEvent.OnAddCardClicked)
-                    }
-                )
-            }
-
-            else -> {
-                CategoryCardsGrid(
-                    cards = uiState.cards,
-                    isCardReordering = uiState.isCardReordering,
-                    isCardReorderEnabled = uiState.isCardReorderEnabled,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    onCardClicked = { cardId ->
-                        onEvent(CategoryDetailsEvent.OnCardClicked(cardId))
-                    },
-                    onCardReorderStarted = { cardId ->
-                        onEvent(CategoryDetailsEvent.OnCardReorderStarted(cardId))
-                    },
-                    onCardReorderMoved = { fromCardId, toCardId ->
-                        onEvent(
-                            CategoryDetailsEvent.OnCardReorderMoved(
-                                fromCardId = fromCardId,
-                                toCardId = toCardId
-                            )
-                        )
-                    },
-                    onCardReorderFinished = {
-                        onEvent(CategoryDetailsEvent.OnCardReorderFinished)
-                    },
-                    onCardReorderCancelled = {
-                        onEvent(CategoryDetailsEvent.OnCardReorderCancelled)
-                    }
-                )
-            }
+            BannerAd()
         }
     }
 

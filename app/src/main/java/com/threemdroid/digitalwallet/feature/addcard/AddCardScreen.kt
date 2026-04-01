@@ -2,6 +2,7 @@ package com.threemdroid.digitalwallet.feature.addcard
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +43,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.threemdroid.digitalwallet.R
+import com.threemdroid.digitalwallet.core.ads.BannerAd
 import com.threemdroid.digitalwallet.core.navigation.encodeRouteValue
 import com.threemdroid.digitalwallet.core.navigation.TopLevelDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -284,29 +286,36 @@ private fun AddCardScreen(
             )
         }
     ) { innerPadding ->
-        Surface(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            color = MaterialTheme.colorScheme.background
+                .padding(innerPadding)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                color = MaterialTheme.colorScheme.background
             ) {
-                items(
-                    items = uiState.methods,
-                    key = { method -> method.method.name }
-                ) { method ->
-                    AddCardMethodItem(
-                        title = stringResource(id = method.titleRes),
-                        onClick = {
-                            onEvent(AddCardEvent.OnMethodClicked(method.method))
-                        }
-                    )
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        items = uiState.methods,
+                        key = { method -> method.method.name }
+                    ) { method ->
+                        AddCardMethodItem(
+                            title = stringResource(id = method.titleRes),
+                            onClick = {
+                                onEvent(AddCardEvent.OnMethodClicked(method.method))
+                            }
+                        )
+                    }
                 }
             }
+            BannerAd()
         }
     }
 }
